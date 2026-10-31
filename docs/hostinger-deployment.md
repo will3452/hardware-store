@@ -173,3 +173,54 @@ Recover a single store from a shared backup in an isolated environment with scop
 ## Capacity changes
 
 If bounded jobs cannot keep up, reports exceed verified limits, or host capabilities cannot enforce the deployment contract, reassess the exact Cloud plan, external managed services, or a later VPS move. A change in hosting does not relax tenant isolation, idempotency, financial consistency, or backup requirements. Record measured constraints and the resulting decision in the [decision register](decisions-and-research.md).
+
+## Production layout for wgalas
+
+The October 31, 2026 repair of `wgalas.lzrk.io` uses the split layout:
+
+| Location | Purpose |
+| --- | --- |
+| `/home/u589081721/domains/wgalas.lzrk.io/laravel` | Git checkout, Artisan, dependencies, private storage, and production environment |
+| `/home/u589081721/domains/wgalas.lzrk.io/public_html` | Public entry point, `.htaccess`, compiled assets, and intentional static files |
+| `/home/u589081721/domains/wgalas.lzrk.io/.deployment-backups/403-20261031T010334Z` | Original environment, public entry files, and bootstrap cache from before the repair |
+
+Run Git, Composer, and Artisan commands from the private `laravel` directory. The domain previously served the entire checkout without a root index, producing LiteSpeed's directory-level 403. The repaired public entry point loads the sibling `laravel` application, and `.htaccess` explicitly selects `index.php` while retaining Laravel's front-controller rules.
+
+The reusable [Hostinger entry template](../deployment/hostinger/public-index.php) must be copied to `public_html/index.php`; it is a deployment template, not the entry point used by a normal local Laravel checkout. Keep `public/index.php` in the source checkout unchanged for normal Laravel operation. After the normal release preflight and asset build, the public-file copy step for this layout is:
+
+```sh
+rsync -a --exclude=/index.php public/ ../public_html/
+cp deployment/hostinger/public-index.php ../public_html/index.php.next
+php -l ../public_html/index.php.next
+mv ../public_html/index.php.next ../public_html/index.php
+{ printf 'DirectoryIndex index.php\n'; cat public/.htaccess; } > ../public_html/.htaccess
+```
+
+Retain `APP_PUBLIC_PATH=/home/u589081721/domains/wgalas.lzrk.io/public_html`, `APP_ENV=production`, `APP_DEBUG=false`, and `SESSION_SECURE_COOKIE=true`. The repair preserved the existing application key and database configuration. Existing migrations and seed data were retained.
+
+SSH provided PHP 8.3 and Bun but no Node or npm at repair time. The attempted Bun build could not launch the Node-based build tool, so the matching, previously verified frontend artifact was uploaded from the local build. Future releases should build from their own locked source commit in local development or CI rather than reuse an older artifact.
+
+Verification after repair: homepage, login, health endpoint, and compiled stylesheet returned 200; protected portals redirected to login; public registration returned 404; sensitive environment, Git, and log paths were denied; the browser rendered the login screen without console errors. This check covers deployment and anonymous access, not an authenticated merchant transaction flow.
+
+## Operational pilot release
+
+Use [the release notes](release-notes.md) and [user guide](user-guide.md) alongside this runbook. Operational posting is synchronous and does not depend on a background queue. The current host has one existing administrator with TOTP enrolled and no configured SMTP transport. The release preserves that identity and uses privately shared activation/recovery links for store owners.
+
+`php artisan app:backup` creates a private timestamped directory under `storage/app/backups/` containing a compressed consistent database dump, private attachments, the environment needed for key recovery, and SHA-256 checksums. The directory is mode 700; files are mode 600. A temporary MySQL options file keeps credentials out of process arguments and is removed afterward. A snapshot without `manifest.json` is incomplete. Keep backups outside `public_html`, monitor disk use, and protect any independent copy. No automatic deletion policy is imposed by this release.
+
+The Laravel schedule includes bounded queue processing every minute and backups daily at 02:00 Asia/Manila. SSH on this host does **not** provide a `crontab` command, so enabling recurring execution requires an hPanel Custom cron entry:
+
+```text
+Minute: *
+Hour: *
+Day: *
+Month: *
+Weekday: *
+Command: /usr/bin/php /home/u589081721/domains/wgalas.lzrk.io/laravel/artisan schedule:run
+```
+
+The schedule definition alone does not install that hPanel entry. Until hPanel is configured, use `php artisan app:backup` manually and do not assume recurring snapshots run. Sales, stock, reports, invitations, and manual recovery links work without cron.
+
+Release procedure for this existing host: take and validate a private pre-release backup, enable maintenance, fast-forward the private checkout to the reviewed commit, install the matching compiled frontend, run additive migrations, rebuild configuration/routes/views, verify the runtime with a rollback-only synthetic transaction, then leave maintenance and verify HTTPS routes/assets. Do not reseed or regenerate the application key. Keep the preexisting untracked `bun.lock`; it is not a reason to overwrite application files.
+
+For recovery, restore the database into an isolated database first, restore private attachments and the matching encryption key, and verify tenant relationships, stock/cash reconciliation, and a known record before considering a live switch. Never automatically import an older snapshot over new merchant transactions. Rollback code only when compatible with the migrated schema; additive pilot tables can remain during a code rollback. Off-site copies and a full timed disaster-recovery drill remain operator follow-ups.

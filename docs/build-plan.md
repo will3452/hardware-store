@@ -2,11 +2,11 @@
 
 Build in dependency order and deliver complete business flows using Laravel on Hostinger Web or Cloud hosting through hPanel. Milestones below have exit evidence rather than invented calendar dates. Estimate dates after confirming team capacity, the exact hosting plan, and pilot requirements.
 
-## Foundation progress
+## Current implementation
 
-The application scaffold, locked dependencies, authentication screens, disabled public registration, administrator MFA enforcement, ULID identity and store tables, verified context helpers, job context cleanup, bounded queue schedule, and MySQL CI configuration are implemented. The local foundation suite covers authentication and tenant boundaries. These are a starting point for M0 and M1, not completion of their full product scope.
+The operational pilot now implements M0–M5 business flows: admin store/owner provisioning, lifecycle, modules, announcements, catalog, inventory, purchasing, paid sales/returns, cash, expenses, private attachments, and reports. See [release notes](release-notes.md) for the exact scope and [the user guide](user-guide.md) for daily use.
 
-Actual Hostinger account preflight and split-public-directory deployment verification are pending. Admin store registration, invitations, feature management, announcements, audit events, and all operational transaction modules remain to be built. Preserve the distinction between implemented foundation tests and the broader acceptance scenarios below.
+M6 remains a broader operational readiness program. Functional integration and concurrency tests, real Hostinger deployment checks, and browser walkthroughs provide release evidence. The original 12-month load profile, disaster-recovery targets, off-site copy, fiscal policy, and per-store extraction drill must not be reported as completed without separate evidence. Manual activation/recovery links are the current delivery channel while SMTP is unset.
 
 ## Delivery milestones
 

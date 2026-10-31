@@ -1,5 +1,7 @@
 # Hardware Store Management System Product Requirements
 
+Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing and automated email delivery are not part of the current pilot.
+
 Version 0.2. Planning baseline updated October 31, 2026. Product decision owner: the system owner. Intended readers: product, design, engineering, and QA.
 
 Independent hardware stores need to record their daily operations and understand their performance. The platform operator needs to onboard those stores, control their available modules, communicate announcements, and see centralized reports. The first release will provide two portals over a common platform, with one initial owner account per store and online operation.

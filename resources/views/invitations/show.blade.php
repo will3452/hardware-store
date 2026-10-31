@@ -1,0 +1,7 @@
+<x-layouts::auth :title="'Activate your store'">
+<div class="hms-workspace"><div><p class="hms-eyebrow">STORE INVITATION</p><h1>{{ $store->display_name }}</h1><p>{{ $store->address_line_1 }}, {{ $store->city }}</p></div><x-notices/><p class="hms-help">The platform administrator manages store access and can view your store’s operational and financial reports.</p><p>Invited account: {{ $owner->email }}. This link expires {{ $invite->expires_at->timezone('Asia/Manila')->format('M j, Y H:i') }} (Asia/Manila).</p>
+@if((auth()->check() && auth()->id() !== $owner->id) || (!$invite->new_identity && auth()->id() !== $owner->id))<p>Sign in as the invited account, then reopen this link to accept.</p><a class="hms-primary" href="{{ route('login') }}">Sign in</a>@auth<form method="POST" action="{{ route('logout') }}">@csrf<button class="hms-secondary">Sign out of current account</button></form>@endauth
+@else<form method="POST" action="{{ route('invitation.accept', $token) }}" class="space-y-4">@csrf
+@if($invite->new_identity)<x-field name="password" label="Choose your password" type="password" autocomplete="new-password" required/><x-field name="password_confirmation" label="Confirm password" type="password" autocomplete="new-password" required/><p class="hms-help">Use at least 12 characters with uppercase, lowercase, numbers, and symbols.</p>@endif
+<button class="hms-primary">Accept invitation & activate store</button></form>@endif</div>
+</x-layouts::auth>

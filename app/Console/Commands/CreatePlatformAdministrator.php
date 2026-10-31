@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Services\StoreAccess;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -51,7 +52,9 @@ class CreatePlatformAdministrator extends Command
             ]);
 
             $user->forceFill(['email_verified_at' => now()])->save();
-            $user->platformPermissions()->create(['permission' => 'platform.portal.access']);
+            foreach (StoreAccess::PERMISSIONS as $permission) {
+                $user->platformPermissions()->create(['permission' => $permission]);
+            }
         });
 
         $this->info('Administrator created. Sign in and configure two-factor authentication before opening the Admin Portal.');

@@ -20,6 +20,7 @@ Baseline version 0.2, updated October 31, 2026, Asia/Manila. This register separ
 | C-12 | Build the project with Laravel | User technology decision |
 | C-13 | Deployment targets Hostinger Web or Cloud hosting through hPanel | User hosting clarification |
 | C-14 | Use MySQL for the application and local development | User database decision |
+| C-16 | Deliver a usable online operational app today on the existing production deployment | User implementation request |
 | C-15 | Update documentation and start the Laravel application foundation | User scope clarification |
 
 ## Proposed implementation defaults
@@ -106,3 +107,9 @@ The requested PRD and build specifications were therefore created as the initial
 The PRD owns product scope and requirement IDs. Reporting owns metric formulas; access control owns permission semantics; the data model owns persistence constraints. When these conflict, resolve the decision here and update the affected documents in the same change. Do not implement divergent rules in each portal.
 
 The Laravel and hPanel update supersedes the initial PostgreSQL preference, database row-security proposal, external identity-provider assumption, and partial unique-index wording. The [deployment guide](hostinger-deployment.md) records the resulting Hostinger-specific contract. Other functional and reporting requirements remain governed by the PRD.
+
+## October 31 operational release decisions
+
+The user requested finishing the app for same-day use and asked for a recommendation on tax setup. Engineering recommended internal sales records alongside the merchant's existing registered invoicing. The release therefore does not infer VAT registration or tax exemption; it preserves entered amounts and labels management profit estimates. This is an engineering release boundary, not user confirmation of a tax status.
+
+Production PHP 8.3.36 and MariaDB 11.8.9 were observed during deployment; local/CI remain MySQL 8.4. Production's mail transport was `log`, so expiring activation and owner recovery links are shared manually by the administrator. Currency PHP and timezone Asia/Manila remain explicit pilot defaults. See [release notes](release-notes.md).

@@ -12,8 +12,9 @@ class PrivatePortalResponse
     {
         $response = $next($request);
 
-        if ($request->user() || $request->is('login', 'forgot-password', 'reset-password*', 'two-factor*', 'confirm-password', 'email*', 'settings*', 'admin*', 'store*', 'livewire*')) {
+        if ($request->user() || $request->is('invitations*', 'login', 'forgot-password', 'reset-password*', 'two-factor*', 'confirm-password', 'email*', 'settings*', 'admin*', 'store*', 'livewire*')) {
             $response->headers->set('Cache-Control', 'private, no-store, max-age=0');
+            $response->headers->set('Referrer-Policy', 'no-referrer');
         }
 
         return $response;

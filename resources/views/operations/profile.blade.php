@@ -1,0 +1,3 @@
+<x-store-screen :store="$store" :page="$page" :modules="$modules">
+<form method="POST" action="{{ route('store.profile.save', $store->id) }}" class="hms-card space-y-4">@csrf<h2>Store contact details</h2><p>{{ $store->display_name }} · {{ $store->code }} · {{ $store->currency }}</p><div class="hms-grid">@foreach(['address_line_1' => 'Address', 'address_line_2' => 'Address line 2', 'city' => 'City', 'province' => 'Province', 'postal_code' => 'Postal code', 'contact_email' => 'Contact email', 'contact_phone' => 'Phone'] as $field => $label)<x-field :name="$field" :label="$label" :value="$store->$field" :required="in_array($field, ['address_line_1', 'city'])"/>@endforeach</div><button class="hms-primary">Save contact details</button></form>
+</x-store-screen>

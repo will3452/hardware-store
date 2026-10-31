@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsurePlatformAdministrator;
 use App\Http\Middleware\PrivatePortalResponse;
 use App\Http\Middleware\ResolveStoreContext;
+use App\Http\Middleware\ThrottleAccountRecovery;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [PrivatePortalResponse::class, EnsureActiveUser::class]);
+        $middleware->web(append: [PrivatePortalResponse::class, EnsureActiveUser::class, ThrottleAccountRecovery::class]);
         $middleware->alias([
             'platform.admin' => EnsurePlatformAdministrator::class,
             'store.context' => ResolveStoreContext::class,

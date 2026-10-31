@@ -1,5 +1,7 @@
 # Hardware Store System Architecture
 
+Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing and automated email delivery are not part of the current pilot.
+
 Build one Laravel application with two portal experiences, a shared business layer, and a transactional MySQL database. Laravel and Hostinger Web or Cloud hosting through hPanel are user-confirmed choices. Exact hosting capacity, services, and the deployment layout remain in [open decision O-04](decisions-and-research.md).
 
 ## Laravel implementation baseline

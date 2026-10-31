@@ -2,12 +2,14 @@
 
 An online system for independent hardware store businesses. A Platform Admin registers stores, controls their enabled modules, publishes announcements, and reviews centralized performance reports. Each store operates through its own Store Portal and starts with one Store Owner account.
 
-Status: Laravel foundation and documentation baseline, version 0.2. Updated on October 31, 2026, using Asia/Manila dates. Laravel and MySQL are the chosen application stack; deployment targets Hostinger Web or Cloud hosting through hPanel.
+Status: online operational pilot, version 0.3. Updated on October 31, 2026, using Asia/Manila dates. Laravel and MySQL are the chosen application stack; deployment targets Hostinger Web or Cloud hosting through hPanel.
 
 ## Build documentation
 
 | Document | Purpose |
 | --- | --- |
+| [User guide](docs/user-guide.md) | Same-day store setup, checkout, receiving, returns, cash closing, and recovery |
+| [Release notes](docs/release-notes.md) | Implemented features, verification, and remaining operational boundaries |
 | [Product requirements](docs/PRD.md) | Product scope, requirements, acceptance criteria, and release boundaries |
 | [Architecture](docs/architecture.md) | Application boundaries, transaction handling, deployment, and API conventions |
 | [Data model](docs/data-model.md) | Entities, relationships, constraints, and financial record structure |
@@ -37,11 +39,11 @@ The [architecture](docs/architecture.md) defines the Laravel structure. The [dep
 
 Hostinger's Web and Cloud database service uses MariaDB internally. The application and local/CI tests use the `mysql` connection and MySQL 8.4; verify compatibility with the host's actual engine before deployment. See the [Hostinger database documentation](https://www.hostinger.com/support/1583226-which-database-management-system-is-used-at-hostinger/).
 
-## Current foundation
+## Current release
 
-Implemented: Laravel 13, Livewire and Fortify authentication, disabled public registration, email verification and password recovery screens, TOTP with mandatory administrator session proof, separate portal entry points, store memberships and module tables, fail-closed store context, job context cleanup, database sessions/cache/queue, and a bounded queue schedule. Domain identifiers use ULIDs. Public self-deletion is removed to preserve actor history.
+The Admin Portal supports store registration, owner activation/replacement, lifecycle, module access, announcements, and centralized reports. The Store Portal supports products and unit conversions, opening stock and counts, purchasing/partial receiving, paid sales and returns, cash sessions, expenses/reversals, private attachments, reports, and CSV exports. Authentication, MFA, tenant checks, atomic posting, and audit recording apply throughout.
 
-Store registration and owner invitations, module configuration, announcements, audit workflows, purchasing, inventory, POS, cash, expenses, and reports remain the subsequent milestones in the [build plan](docs/build-plan.md). The portal entry screens do not imply those business modules are already implemented.
+Use the [user guide](docs/user-guide.md) to set up a store today. Printouts are internal sales records; tax calculation and fiscal invoicing remain unconfigured. Email is not configured on the current host, so the administrator shares activation and recovery links privately. See [release notes](docs/release-notes.md) for precise scope and verification boundaries.
 
 ## Local development
 
@@ -72,7 +74,7 @@ composer ci:check
 npm run build
 ```
 
-The PHP checks run Pint, PHPStan, and the test suite. Tests use the separate `hardware_store_test` MySQL database and may reset its tables; keep that database isolated from merchant or development records. CI provides MySQL 8.4 and checks PHP 8.3 and 8.4. Hostinger account preflight, production performance, backup recovery, and the complete business scenarios remain release gates.
+The PHP checks run Pint, PHPStan, and the test suite. Tests use the separate `hardware_store_test` MySQL database and may reset its tables; keep that database isolated from merchant or development records. CI provides MySQL 8.4 and checks PHP 8.3 and 8.4. The suite includes separate-process MySQL concurrency tests. The broader performance and disaster-recovery targets are not implied by these functional checks; see release notes.
 
 ## Product structure
 
@@ -101,4 +103,4 @@ Implementation defaults are explicitly marked in the decision register. Currency
 
 The working repository contained no application files when this baseline was prepared. The requested source repository, [will3452/hardware-store](https://github.com/will3452/hardware-store), was cloned to `/private/tmp/hardware-store-import` and had no commits, branches, tags, or Markdown files when checked on October 31, 2026. There was no existing Markdown documentation to import.
 
-The initial documentation is now accompanied by a Laravel foundation. Implementation continues in the [build plan](docs/build-plan.md); Hostinger deployment uses the [deployment guide](docs/hostinger-deployment.md).
+The initial documentation is now accompanied by the operational Laravel pilot. Progress and broader verification targets are tracked in the [build plan](docs/build-plan.md); Hostinger deployment uses the [deployment guide](docs/hostinger-deployment.md).

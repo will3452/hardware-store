@@ -1,5 +1,7 @@
 # Hardware Store Data Model
 
+Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing and automated email delivery are not part of the current pilot.
+
 This is the logical persistence contract for the first release. Implement it with Laravel Eloquent and MySQL InnoDB migrations compatible with the verified Hostinger account version. Independent businesses are separated by Store. The model uses memberships for authorization and immutable posting records for inventory, sales, payments, and cash.
 
 ## Conventions and invariants
