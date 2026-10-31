@@ -1,10 +1,10 @@
 # Hardware Store Data Model
 
-This is the logical persistence contract for the first release. Physical migrations depend on the selected stack. Independent businesses are separated by Store. The model uses memberships for authorization and immutable posting records for inventory, sales, payments, and cash.
+This is the logical persistence contract for the first release. Implement it with Laravel Eloquent and MySQL InnoDB migrations compatible with the verified Hostinger account version. Independent businesses are separated by Store. The model uses memberships for authorization and immutable posting records for inventory, sales, payments, and cash.
 
 ## Conventions and invariants
 
-- Use generated opaque primary keys. Keep human document numbers separate from IDs.
+- Use generated ULIDs for domain primary keys with Laravel's `HasUlids` behavior. Keep human document numbers separate from IDs. Framework queue, cache, and session records may retain their framework identifier formats; their user references must match the application's user key type.
 - Every store-owned table has `store_id`. A child references its parent through a composite foreign key containing `store_id`, preventing cross-store relationships.
 - Financial totals use exact decimal amounts at currency precision. Quantity, conversion factor, inventory value, and cost use six decimal places. Round using the rules in [reporting](reporting.md).
 - Store UTC `created_at` and server-controlled `posted_at` timestamps. Mutable drafts have `updated_at` and a concurrency `version`.
@@ -40,7 +40,7 @@ The diagram omits scope columns for readability. All operational relationships r
 | Table | Essential fields | Constraints and purpose |
 | --- | --- | --- |
 | `stores` | `id`, `code`, `display_name`, structured address, `contact_email`, `contact_phone`, `currency`, `timezone`, `status`, `authorization_version` | Unique platform store code; lifecycle checks; currency locked after first posting |
-| `users` | `id`, `auth_subject`, `email`, `display_name`, `status` | Unique provider subject and normalized email; provider owns password credentials |
+| `users` | `id`, `name`, normalized `email`, `password`, `email_verified_at`, `remember_token`, `status`, Fortify two-factor fields | Laravel authenticatable identity; unique normalized email; hashed password and encrypted TOTP secret and recovery codes; no external identity provider required |
 | `platform_user_permissions` | `user_id`, `permission`, assignment actor and time | Explicit platform actions independent of store membership |
 | `store_memberships` | `store_id`, `user_id`, `role`, `status`, `activated_at`, `revoked_at` | Unique current user membership per store; at most one active owner per store in release one |
 | `invitations` | `id`, `store_id`, `user_id` or verified target email, `purpose`, `token_hash`, `expires_at`, `accepted_at`, `revoked_at`, `delivery_status` | Single-use purpose-specific invitation; only one live invitation per owner provisioning or replacement operation |
@@ -63,7 +63,7 @@ Invitation creation and owner activation do not make a pending Store operational
 | `stock_counts` | `id`, `store_id`, `state`, `snapshot_at`, creator, posting actor and time | `draft`, `posted`, `cancelled`; no silent posting against a changed balance version |
 | `stock_count_lines` | count ID, store and product, snapshot quantity and balance version, counted quantity, cost snapshot, reason | Unique product per count; count delta normalized to base unit |
 
-Use explicit foreign keys for known movement sources where practical. If a polymorphic source reference is used, a database constraint or trigger must verify the source exists, belongs to the same store, and matches the permitted movement type. Application checks alone do not make an invalid reference acceptable.
+Implement known movement sources with explicit nullable source foreign keys, store-scoped composite references, and a constraint selecting exactly one valid source for the movement type. The logical `source_type` and `source_id` above describe the source relationship, not permission to persist an unchecked polymorphic reference. Do not depend on database triggers or elevated privileges unavailable on the selected Hostinger plan. Application validation supplements these constraints and does not replace source ownership integrity.
 
 Movement types include `opening`, `receipt`, `receipt_reversal`, `sale`, `return_restock`, `count_surplus`, `count_shortage`, and `damage`. Positive count differences require a known average cost or an explicitly entered cost when no cost basis exists. Zero cost is allowed only when explicitly marked known and justified; null cost is not zero.
 
@@ -119,11 +119,24 @@ A recorded expense amount includes any unrecovered tax under the initial operati
 | `outbox_messages` | message type, scoped source, delivery payload reference, attempts, next attempt, state | Written in source transaction; delivery retries do not repost source work |
 | `attachments` | store, owning entity, private object key, checksum, type, size, created actor/time | Private storage; ownership verified on upload finalization and download |
 
+Add Laravel's database session, queue, failed-job, cache, and cache-lock tables when their drivers are configured. Treat their stored payloads as sensitive. Database jobs and outbox records must establish and clear verified scope per execution; their table presence alone does not grant tenant access.
+
 ## Required indexes and constraints
 
 Create indexes for store and posting time on sales, returns, receipts, expenses, cash movements, inventory movements, and audit events. Add store and product indexes for stock lookup and movement history. Index current membership and current module lookup. Index announcement publication windows and target membership.
 
-Use partial unique constraints for one open cash session and one active release-one owner. Add unique constraints for store and SKU, populated barcode, document type and document number, source effect, and command key. Totals, quantities, state transitions, and cross-record cumulative return limits must also be enforced in transactional services; some require locks rather than a row-level check constraint.
+MySQL does not use the earlier PostgreSQL partial-index design. Use nullable generated guard columns and unique indexes for conditional uniqueness, verified on the actual MySQL version:
+
+- Cash session `open_guard` is `1` when state is open and `NULL` otherwise; a unique index on `(store_id, open_guard)` permits only one open session.
+- Membership `active_owner_guard` is `1` only for an active owner and `NULL` otherwise; a unique index on `(store_id, active_owner_guard)` permits only one active owner.
+- Membership `current_user_guard` is numeric `1` for pending or active membership and `NULL` otherwise. A unique index on `(store_id, user_id, current_user_guard)` preserves revoked history while preventing duplicate current memberships. Numeric guards avoid generated string expressions that can depend on SQL padding modes.
+- Normalize an absent barcode to `NULL`, not an empty string, before enforcing `(store_id, barcode)` uniqueness.
+
+Use ordinary stored columns for composite foreign key references; the generated guards are uniqueness aids, not foreign key targets. Add explicit parent indexes such as `(store_id, id)` and use matching column types, lengths, collations, and InnoDB engines on both sides. Use short, database-unique constraint names for compatibility across host versions.
+
+Add unique constraints for store and SKU, document type and document number, each typed source effect, and command key. Totals, quantities, state transitions, and cross-record cumulative return limits must also be enforced in transactional services; some require locks rather than a row-level check constraint. Test migrations and these concurrency rules on MySQL, not only SQLite.
+
+Use exact `DECIMAL` columns for values and preserve decimal strings through Eloquent. The proposed amounts use `DECIMAL(20,2)` and quantities, factors, and cost use `DECIMAL(20,6)`; validate maximum input and multiplication ranges before persistence. Configure strict SQL behavior and `utf8mb4`, with consistent identifier collations on foreign keys. Record any host-imposed engine or SQL-mode limitation before migration design is finalized.
 
 ## Later model additions
 

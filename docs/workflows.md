@@ -2,6 +2,8 @@
 
 The screens below implement the first-release PRD. Keep product language consistent: Store, Store Owner, Platform Admin, Admin Portal, and Store Portal. The system is online; a locally retained draft is not a posted transaction.
 
+Implement the portal interface with the proposed Laravel Livewire and Blade baseline. Login, recovery, verification, and TOTP use Fortify. Public registration and starter-kit team creation are disabled; store onboarding remains an admin-controlled invitation workflow. Reauthorize server actions even when a Livewire component already rendered the requested record.
+
 ## Navigation
 
 | Portal | Area | Main screens |

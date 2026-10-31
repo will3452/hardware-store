@@ -1,12 +1,18 @@
 # Hardware Store Build Plan and Verification
 
-Build in dependency order and deliver complete business flows. Milestones below have exit evidence rather than invented calendar dates. Estimate dates after resolving the stack, team capacity, and pilot requirements.
+Build in dependency order and deliver complete business flows using Laravel on Hostinger Web or Cloud hosting through hPanel. Milestones below have exit evidence rather than invented calendar dates. Estimate dates after confirming team capacity, the exact hosting plan, and pilot requirements.
+
+## Foundation progress
+
+The application scaffold, locked dependencies, authentication screens, disabled public registration, administrator MFA enforcement, ULID identity and store tables, verified context helpers, job context cleanup, bounded queue schedule, and MySQL CI configuration are implemented. The local foundation suite covers authentication and tenant boundaries. These are a starting point for M0 and M1, not completion of their full product scope.
+
+Actual Hostinger account preflight and split-public-directory deployment verification are pending. Admin store registration, invitations, feature management, announcements, audit events, and all operational transaction modules remain to be built. Preserve the distinction between implemented foundation tests and the broader acceptance scenarios below.
 
 ## Delivery milestones
 
 | Milestone | Scope and dependencies | Exit evidence |
 | --- | --- | --- |
-| M0 Product and engineering setup | Confirm O-01 through O-03 where they affect the scaffold; select stack; define API conventions and migration workflow | Recorded stack decision, initial application skeleton, automated local checks, two-store test fixtures |
+| M0 Laravel and hosting foundation | Lock Laravel 13 and tested dependencies; adapt the proposed Livewire and Fortify starter; use MySQL; verify hPanel deployment capabilities | Laravel skeleton, MySQL CI, disabled public registration, two-store fixtures, verified public-path layout and bounded cron approach |
 | M1 Platform foundation | Identity, store provisioning, memberships, lifecycle, module access, announcements, audit; depends on M0 | Admin registers a store; owner activates; cross-store access fails; stale permissions cannot post |
 | M2 Catalog and inventory | Products, units, opening stock, ledger, balances, counts, private attachments; depends on M1 | Box-to-piece and fractional stock flows reconcile; ledger and balances match under concurrency |
 | M3 Purchasing | Suppliers, orders, partial receipts, permitted full receipt reversal; depends on M2 | Partial delivery affects only received quantity; duplicate receipt submission has one effect |
@@ -20,17 +26,20 @@ For development before O-02 is finalized, use clearly labeled nonfiscal test doc
 
 ### M0 Product and engineering setup
 
-- Record framework, runtime, database, authentication, and deployment decisions with operating cost implications.
-- Create the application structure, migration tooling, formatter, linter, and baseline CI.
+- Record exact dependency versions for Laravel 13, Eloquent, the proposed Livewire starter kit, Fortify, and decimal arithmetic. Verify PHP 8.3 compatibility and the PHP 8.4 production target.
+- Create the Laravel structure, Artisan migrations, Pint formatting, tests, Vite build, and baseline CI with a MySQL service. Commit Composer and npm lockfiles.
+- Disable public registration and starter-kit team creation. Keep invited owner provisioning and platform MFA enforcement as explicit M1 workflows.
+- Configure database session, queue, cache, and cache-lock tables. Define job context cleanup and the bounded cron drain.
+- Verify the selected Hostinger plan, CLI and web PHP, public-only document layout, and queue process capability against the [deployment guide](hostinger-deployment.md).
 - Define the endpoint contract for each upcoming milestone, including errors and idempotency behavior.
 - Build seeded Store A and Store B with distinct owners and deliberately overlapping product codes.
 - Decide tax and fiscal test scenarios, document naming, currency precision, and supported devices before dependent UI is finalized.
 
 ### M1 Platform foundation
 
-- Implement provider identity integration, owner invitations, platform MFA, recovery, and session invalidation.
+- Implement Laravel session authentication and Fortify integration, owner invitations, mandatory platform MFA, recovery, and session invalidation.
 - Build store registration, pending activation, lifecycle changes, and controlled owner replacement.
-- Implement verified scope, database isolation, composite ownership constraints, and scoped file authorization primitives.
+- Implement verified store context, Laravel policy and query boundaries, MySQL composite ownership constraints and nullable uniqueness guards, and scoped file authorization primitives.
 - Build module modes, dependency validation, invalidation, and historical resolution permissions.
 - Build announcements with audience and timing checks.
 - Record audit and notification outbox events in source transactions.
@@ -73,6 +82,7 @@ For development before O-02 is finalized, use clearly labeled nonfiscal test doc
 - Run the critical scenarios below, then verify the targeted latency and sizing profile.
 - Rehearse database and private file recovery, including isolated extraction of one store.
 - Review permissions, secret management, sensitive logging, rate limits, and platform reporting access.
+- Verify public-path handling, cache exclusions, matching PHP runtimes, compiled assets, and non-overlapping queue processing on a staging hPanel account.
 - Prepare operator instructions for onboarding, failed notifications, uncertain sales, suspension, backups, and reconciliation discrepancies.
 - Train pilot owners on opening stock, payment confirmation, return disposition, expense classification, and cash close.
 
@@ -102,6 +112,7 @@ For development before O-02 is finalized, use clearly labeled nonfiscal test doc
 | NFR-04 Usability | M6 | T39 |
 | NFR-05 Security | M1 and M6 | T04, T05, T36, T40 |
 | NFR-06 Availability and recovery | M6 | T37, operational monitoring review |
+| NFR-07 Hostinger compatibility | M0 and M6 | T41, T42, T43, T44, T45, T46 |
 
 ## Critical verification scenarios
 
@@ -149,6 +160,12 @@ Use integration tests for persistence, permissions, and concurrency; focused cal
 | T38 | Run PRD load profile with 12-month history | Measure p95 server latency and resource use against accepted targets |
 | T39 | Complete primary flow at 360 px and desktop using keyboard | No blocked controls, hidden amount labels, or lost input on validation |
 | T40 | Use report-only admin privileges to post sales or manage stores; probe protected mutations | No unauthorized operational write; CSRF and session protection enforced |
+| T41 | Compare PHP versions and required extensions across web, SSH, Composer, and cron | Laravel 13 requirements and locked production dependencies pass on every execution path |
+| T42 | Deploy public-only or split public directory and probe private paths | Matching entry point and asset manifest work; private application, environment, storage, and Git files are inaccessible |
+| T43 | Run overlapping cron drains and process Store A then Store B, including failure and retry | One permitted drain; bounded processing; no stale store context, duplicated source work, or hidden failure |
+| T44 | Run schema and simultaneous owner and cash creation on production-family MySQL | Composite references and generated uniqueness guards reject invalid writes; InnoDB transaction and lock behavior verified |
+| T45 | Load both portals from a production artifact without Node or Vite running | Built assets load; no development hot marker or server dependency |
+| T46 | Request authenticated pages, Livewire actions, and downloads with two stores through host caching | No cached cross-store content; private response and cache exclusions verified |
 
 The full database isolation inventory must cover every store-owned table, including any table added after this baseline. Do not treat one successful two-store example as coverage for all entity types.
 
@@ -177,6 +194,7 @@ The full database isolation inventory must cover every store-owned table, includ
 - [ ] Backup restoration and isolated store recovery rehearsed within accepted recovery targets.
 - [ ] Monitoring, alert ownership, notification retries, and incident recovery instructions configured.
 - [ ] Representative performance targets measured; any accepted limits documented.
+- [ ] Hostinger preflight, MySQL constraints, PHP consistency, public-only layout, cache exclusions, and cron queue checks pass in staging.
 - [ ] Pilot owner training completed and supported devices checked.
 - [ ] No unresolved critical security, duplicate posting, stock, refund, or cash issue remains.
 

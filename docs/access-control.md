@@ -8,6 +8,8 @@ User identities are separate from Stores. A store membership connects a user to 
 
 An admin registering an already-known owner email must explicitly choose the existing identity. Acceptance requires that person to authenticate as that identity and accept the store invitation. Creating a store never resets an existing password or silently changes an existing membership.
 
+Use Laravel's session guard and Fortify as the baseline identity implementation. Disable public registration and any starter-kit team creation flow. Route all owner creation through the admin invitation action. A TOTP feature being available does not enforce platform MFA by itself: admin middleware must require confirmed enrollment and a completed challenge before portal access.
+
 To replace an owner, create a pending invitation for the successor. On authenticated acceptance, atomically activate the new owner membership and revoke the previous owner membership. Historical records retain their original actor IDs. Revoke the old store sessions without disrupting unrelated memberships. This is a controlled administrative action, not a general staff invitation feature.
 
 ## Permission matrix
@@ -34,7 +36,7 @@ To replace an owner, create a pending invitation for the successor. On authentic
 | Delete a store and its financial history | No ordinary UI action | No |
 | Access another store by editing a URL | No unscoped route | No |
 
-Use explicit permissions such as `platform.stores.manage`, `platform.modules.manage`, `platform.announcements.manage`, `platform.reports.read`, `platform.reports.export`, and `platform.audit.read`. The first Platform Admin may receive all of these, but each endpoint checks its own permission.
+Use explicit permissions such as `platform.portal.access`, `platform.stores.manage`, `platform.modules.manage`, `platform.announcements.manage`, `platform.reports.read`, `platform.reports.export`, and `platform.audit.read`. The foundation bootstrap grants only `platform.portal.access`; module-specific permissions are added with their reviewed workflows. Entering the portal does not grant permission to operate every module.
 
 Future Cashier, Manager, and Inventory Staff roles are design candidates, not active release-one roles. Add them with a separate permission specification and tests when multiple staff is built.
 
@@ -92,7 +94,7 @@ A resolution command records its source obligation and reason. A resolution-only
 ## Session and request security
 
 - Require multifactor authentication for platform users and protect recovery from account enumeration.
-- Use secure, HTTP-only cookies or an equivalent provider mechanism, with CSRF protection for cookie-authenticated mutations.
+- Use Laravel database sessions with secure, HTTP-only cookies and CSRF protection for browser and Livewire mutations.
 - Recheck membership, store state, and entitlement server-side. Cached authorization must invalidate immediately on relevant changes or consult a current authorization version.
 - Rate limit sign-in, activation, recovery, exports, and expensive report requests.
 - Bind activation and recovery tokens to purpose, identity, expiry, and one-time use. Store token hashes, not plaintext tokens.
@@ -109,3 +111,11 @@ For cross-store reports, verify `platform.reports.read` or `platform.reports.exp
 Use two stores with overlapping SKU codes and distinct users. Test every store-owned entity through list, search, detail, mutation, report, export, and file paths. Test scoped jobs, cache reuse, connection reuse, guessed document numbers, and stale sessions after membership removal. Test that an administrator with report permission but without store management permission cannot change a store, and cannot post merchant transactions.
 
 The enforceable boundary must survive client modification. Hidden buttons, random IDs, and a `store_id` field on its own are insufficient authorization controls. See [OWASP multi tenant security](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html).
+
+## Laravel and MySQL enforcement
+
+Resolve store context through authenticated middleware and current membership; use scoped route bindings, policies, a fail-closed store model scope, explicit query scoping, and composite foreign keys. MySQL on the selected hosting baseline does not provide the previously proposed PostgreSQL row-security boundary. Database credentials are never given to store users.
+
+Keep any global scope bypass inside named platform services that demand explicit platform permission. Reauthorize every Livewire action and related resource ID, including hydrated component properties. Validate unique values within the current store. Job middleware must establish scope and clear it on success or failure before the next queued job.
+
+Disable Hostinger or LiteSpeed full-page caching on authentication, admin, store, Livewire, and private response paths. Store-dependent application cache keys include verified store identity. Add integration cases for cache leakage, unscoped validation, raw query paths, Livewire ID substitution, and a queue worker processing two stores in sequence.

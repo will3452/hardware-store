@@ -1,8 +1,10 @@
 # Hardware Store Management System Product Requirements
 
-Version 0.1. Planning baseline dated October 31, 2026. Product decision owner: the system owner. Intended readers: product, design, engineering, and QA.
+Version 0.2. Planning baseline updated October 31, 2026. Product decision owner: the system owner. Intended readers: product, design, engineering, and QA.
 
 Independent hardware stores need to record their daily operations and understand their performance. The platform operator needs to onboard those stores, control their available modules, communicate announcements, and see centralized reports. The first release will provide two portals over a common platform, with one initial owner account per store and online operation.
+
+The application will use Laravel and target Hostinger Web or Cloud hosting through hPanel. The implementation baseline is Laravel 13, MySQL with InnoDB, Laravel session authentication, and short cron-driven background processing. The proposed interface uses the official Livewire starter kit. These hosting constraints do not change the required store isolation, atomic posting, or reconciliation behavior.
 
 Confirmed requirements and proposed implementation defaults are distinguished in the [decision register](decisions-and-research.md). Requirement IDs below define the proposed release contract. Open policy decisions have explicit gates rather than hidden assumptions.
 
@@ -66,6 +68,7 @@ Acceptance criteria:
 - An expired or used invitation cannot activate an account; resending revokes the earlier invitation.
 - Recovery responses do not reveal whether an email is registered. Recovery and login are rate limited.
 - Store suspension, disabled identities, and revoked membership prevent access on the next request and invalidate applicable sessions.
+- Public self-registration is disabled. Laravel Fortify authentication, password recovery, and TOTP features are adapted to invitation-based owner onboarding; platform access requires confirmed TOTP enrollment.
 
 ### FR-03 Store lifecycle and profile
 
@@ -235,6 +238,7 @@ These are proposed engineering targets for pilot planning, not measured capabili
 | NFR-04 | Operational UI works at 360 px width and on desktop; checkout supports keyboard entry and visible validation | Manual device and keyboard checks |
 | NFR-05 | TLS, protected sessions, managed secrets, least privilege, scoped file access, and platform MFA | Security integration checks |
 | NFR-06 | Proposed production availability target 99.5 percent monthly, recovery point at most 24 hours, recovery time at most 8 hours | Hosting design review and restore drill |
+| NFR-07 | Run within verified Hostinger hPanel capabilities using MySQL and bounded scheduled work; serve only public assets and the Laravel entry point | Deployment preflight, migration test, cron smoke test, and private-path exposure checks |
 
 The performance dataset uses a 12-month transaction history for the default report test. Hosting and recovery targets must be accepted with cost implications before provisioning production infrastructure.
 
@@ -259,4 +263,6 @@ Release requires all first-release functional acceptance criteria, the critical 
 
 ## Related specifications
 
-Detailed entity constraints belong in the [data model](data-model.md). Screen and state behavior belongs in [workflows](workflows.md). Authentication and entitlement enforcement belongs in [access control](access-control.md). The [architecture](architecture.md) defines the proposed technical approach; framework and provider choices remain recorded decisions rather than assumed product requirements.
+Detailed entity constraints belong in the [data model](data-model.md). Screen and state behavior belongs in [workflows](workflows.md). Authentication and entitlement enforcement belongs in [access control](access-control.md). The [architecture](architecture.md) defines the Laravel implementation baseline; remaining service and hosting details are recorded in the decision register.
+
+Laravel and the Hostinger hPanel deployment family are user-confirmed choices. The [Hostinger deployment guide](hostinger-deployment.md) governs environment verification, public directory placement, assets, queues, and release operations. Actual account capacity must be measured against the quality targets; the plan name alone does not establish production readiness.
