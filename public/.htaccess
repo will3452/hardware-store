@@ -5,6 +5,16 @@
 
     RewriteEngine On
 
+    # Keep the document root safe even if a hosting Git job copies source here.
+    RewriteRule ^\.well-known/acme-challenge/[A-Za-z0-9_-]+$ - [L]
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(?!index\.php$).*\.(php[0-9]*|phtml|phar)(/|$) - [F,L,NC]
+    RewriteRule ^(app|bootstrap|config|database|deployment|docs|node_modules|public|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_URI} !^/($|index\.php$|build/|favicon\.(ico|svg)$|apple-touch-icon\.png$|robots\.txt$|\.well-known/acme-challenge/)
+    RewriteRule ^ - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

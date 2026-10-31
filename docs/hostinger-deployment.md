@@ -224,3 +224,11 @@ The schedule definition alone does not install that hPanel entry. Until hPanel i
 Release procedure for this existing host: take and validate a private pre-release backup, enable maintenance, fast-forward the private checkout to the reviewed commit, install the matching compiled frontend, run additive migrations, rebuild configuration/routes/views, verify the runtime with a rollback-only synthetic transaction, then leave maintenance and verify HTTPS routes/assets. Do not reseed or regenerate the application key. Keep the preexisting untracked `bun.lock`; it is not a reason to overwrite application files.
 
 For recovery, restore the database into an isolated database first, restore private attachments and the matching encryption key, and verify tenant relationships, stock/cash reconciliation, and a known record before considering a live switch. Never automatically import an older snapshot over new merchant transactions. Rollback code only when compatible with the migrated schema; additive pilot tables can remain during a code rollback. Off-site copies and a full timed disaster-recovery drill remain operator follow-ups.
+
+### Hostinger automatic Git deployment
+
+The release push triggered an additional Hostinger checkout directly into `public_html`. This was detected by the final exposure check, and the extra source tree was moved into the private release backup before restoring a public-only directory. The private application remained in `laravel`.
+
+The repository now includes a root `.htaccess` safety guard, and `public/.htaccess` denies source directories, hidden files, and direct PHP execution outside `index.php`. Only the intentional static allowlist and Laravel routes are served. This protects against a repeat checkout, but automatic source deployment into the document root is still the wrong release target. In hPanel Git settings, disable automatic deployment to `public_html` or retarget it to the private `laravel` directory and use the explicit public-asset release procedure. SSH access alone did not expose that hPanel configuration.
+
+After any Git push, check both the private application revision and the public directory contents. Never assume a successful Git webhook has migrated the database or installed the matching built assets.
