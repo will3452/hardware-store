@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\CashReportController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PortalController;
@@ -25,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('announcements', [AdminController::class, 'announcement'])->name('announcements.create');
         Route::post('announcements/{announcement}', [AdminController::class, 'announcementStatus'])->name('announcements.status');
         Route::get('audit', [AdminController::class, 'audit'])->name('audit');
+        Route::get('health', [AdminController::class, 'health'])->name('health');
     });
     Route::get('store', [PortalController::class, 'stores'])->name('store.index');
     Route::prefix('store/{store}')->middleware('store.context')->name('store.')->group(function () {
@@ -38,11 +40,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::get('documents/{document}', [OperationsController::class, 'document'])->name('document');
         Route::post('cash/{action}', [OperationsController::class, 'cash'])->name('cash');
+        Route::get('cash-sessions/{cashSession}', [CashReportController::class, 'show'])->name('cash.show');
         Route::post('suppliers', [OperationsController::class, 'supplier'])->name('suppliers.save');
         Route::post('purchases', [OperationsController::class, 'purchase'])->name('purchases.save');
+        Route::post('purchases/{order}/draft', [OperationsController::class, 'purchase'])->name('purchases.update');
         Route::get('purchases/{order}', [OperationsController::class, 'order'])->name('order');
         Route::post('purchases/{order}/status', [OperationsController::class, 'orderStatus'])->name('order.status');
         Route::post('profile', [OperationsController::class, 'profile'])->name('profile.save');
+        Route::post('payment-settings', [OperationsController::class, 'paymentSettings'])->name('payments.settings');
     });
 });
 

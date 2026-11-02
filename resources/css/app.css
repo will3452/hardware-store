@@ -120,6 +120,10 @@ select:focus[data-flux-control] {
 .dark .hms-product-options { border-color: #414743; }
 .hms-product-actions { display: flex; gap: .7rem; flex-wrap: wrap; align-items: center; }
 .hms-product-actions [aria-disabled=true] { opacity: .6; cursor: wait; }
+.hms-payment-row { border-bottom: 1px solid var(--color-zinc-300); padding-bottom: 1rem; }
+.hms-payment-totals { background: #edf6f0; padding: 1rem; border-radius: .6rem; }
+.dark .hms-payment-row { border-color: #414743; }
+.dark .hms-payment-totals { background: #183c2c; }
 .hms-steps { display: grid; gap: .8rem; padding-left: 1.3rem; list-style: decimal; }
 .hms-steps span { display: block; font-size: .75rem; color: #7a8e83; }
 [x-cloak] { display: none !important; }

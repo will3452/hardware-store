@@ -14,6 +14,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\User;
 use App\Support\Amounts;
+use App\Support\Tenancy\StoreContext;
 use Brick\Math\BigInteger;
 use Illuminate\Support\Facades\DB;
 
@@ -74,6 +75,7 @@ final class Operations
         $seen = [];
         foreach ($data['lines'] as $input) {
             $product = Product::where('active', true)->whereKey($input['product_id'])->firstOrFail();
+            StoreAccess::check(! isset($input['catalog_price_minor']) || (int) $input['catalog_price_minor'] === $product->price_minor, 'The catalog price changed for '.$product->name.'. Review its current price before posting.');
             StoreAccess::check(! in_array($product->id, $seen), 'Combine duplicate products into one line.');
             $seen[] = $product->id;
             $unit = ProductUnit::where('product_id', $product->id)->whereKey($input['unit_id'])->firstOrFail();
@@ -101,6 +103,7 @@ final class Operations
             if ($amount === 0) {
                 continue;
             }
+            StoreAccess::check(array_key_exists($payment['method'], app(StoreContext::class)->store()->acceptedPayments()), 'This payment method is no longer accepted at checkout. Review the payment methods before posting.');
             StoreAccess::check(! in_array($payment['method'], $seen), 'Combine payments of the same method.');
             $seen[] = $payment['method'];
             if ($payment['method'] === 'cash') {
@@ -236,7 +239,9 @@ final class Operations
             $poLine->received_micro -= $source->quantity_micro;
             $poLine->save();
         }
-        $order->update(['status' => 'placed']);
+        if ($order->status === 'received') {
+            $order->update(['status' => 'placed']);
+        }
         $doc->original_id = $original->id;
         $doc->total_minor = $original->total_minor;
         $doc->cost_micro = $original->cost_micro;

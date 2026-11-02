@@ -15,19 +15,23 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
+use App\Models\Store;
 use App\Models\StoreModule;
 use App\Models\Supplier;
 use App\Services\Operations;
 use App\Services\ProductCatalog;
+use App\Services\Purchasing;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
 use App\Support\Tenancy\StoreContext;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -47,7 +51,7 @@ class OperationsController extends Controller
             $data['brands'] = $catalog->choices('brand');
             $data['sellingUnits'] = ProductCatalog::UNITS;
         }
-        if (in_array($page, ['products', 'inventory', 'sales', 'purchasing'])) {
+        if (in_array($page, ['products', 'inventory'])) {
             $request->validate(['q' => ['nullable', 'string', 'max:100']]);
             $query = Product::query()->orderBy('name');
             if ($request->filled('q')) {
@@ -69,13 +73,17 @@ class OperationsController extends Controller
             $data['from'] = $request->input('from', now()->timezone($data['store']->timezone)->format('Y-m-d'));
             $data['to'] = $request->input('to', $data['from']);
             StoreAccess::check($data['to'] >= $data['from'], 'The end date must follow the start date.');
-            $data['metrics'] = app(Reports::class)->summarize([$store], $data['from'], $data['to'], $data['store']->timezone);
-            if ($page === 'reports') {
-                $data['performance'] = app(Reports::class)->products($store, $data['from'], $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'performance_page')->withQueryString();
-                $data['stockReport'] = app(Reports::class)->stock($store, $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'stock_page')->withQueryString();
-            }
+            $data['generatedAt'] = now();
+            DB::transaction(function () use (&$data, $store, $page): void {
+                $data['metrics'] = app(Reports::class)->summarize([$store], $data['from'], $data['to'], $data['store']->timezone);
+                if ($page === 'reports') {
+                    $data['performance'] = app(Reports::class)->products($store, $data['from'], $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'performance_page')->withQueryString();
+                    $data['stockReport'] = app(Reports::class)->stock($store, $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'stock_page')->withQueryString();
+                }
+            });
             if ($page === 'reports' && in_array($request->input('export'), ['products', 'inventory'], true)) {
                 $type = $request->input('export');
+                StoreAccess::audit($request->user(), $store, 'store.report_exported', null, ['type' => $type, 'from' => $data['from'], 'to' => $data['to']]);
                 $query = $type === 'products' ? app(Reports::class)->products($store, $data['from'], $data['to'], $data['store']->timezone) : app(Reports::class)->stock($store, $data['to'], $data['store']->timezone);
 
                 return response()->streamDownload(function () use ($data, $type, $query): void {
@@ -99,6 +107,8 @@ class OperationsController extends Controller
                 }, $type.'-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
             }
             if ($page === 'reports' && $request->boolean('export')) {
+                StoreAccess::audit($request->user(), $store, 'store.report_exported', null, ['type' => 'summary', 'from' => $data['from'], 'to' => $data['to']]);
+
                 return response()->streamDownload(function () use ($data): void {
                     $out = fopen('php://output', 'w');
                     if ($out === false) {
@@ -120,7 +130,23 @@ class OperationsController extends Controller
             $data['orders'] = PurchaseOrder::latest()->paginate(20, ['*'], 'orders_page');
         }
         if (in_array($page, ['sales', 'expenses'])) {
-            $data['documents'] = BusinessDocument::whereIn('kind', $page === 'sales' ? ['sale', 'return'] : ['expense', 'expense_reversal'])->latest('posted_at')->paginate(20, ['*'], 'history_page');
+            $kinds = $page === 'sales' ? ['sale', 'return'] : ['expense', 'expense_reversal'];
+            $request->validate(['history_q' => ['nullable', 'string', 'max:100'], 'history_kind' => ['nullable', Rule::in($kinds)], 'history_from' => ['nullable', 'date_format:Y-m-d'], 'history_to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('history_from') ? ['after_or_equal:history_from'] : [])]]);
+            $history = BusinessDocument::whereIn('kind', $kinds);
+            if ($request->filled('history_q')) {
+                $needle = '%'.addcslashes($request->string('history_q')->toString(), '\\%_').'%';
+                $history->where(fn ($q) => $q->where('id', 'like', $needle)->orWhere('metadata->customer', 'like', $needle)->orWhere('metadata->payee', 'like', $needle)->orWhere('metadata->notes', 'like', $needle));
+            }
+            if ($request->filled('history_kind')) {
+                $history->where('kind', $request->input('history_kind'));
+            }
+            if ($request->filled('history_from')) {
+                $history->where('posted_at', '>=', CarbonImmutable::parse($request->input('history_from'), $data['store']->timezone)->startOfDay()->utc());
+            }
+            if ($request->filled('history_to')) {
+                $history->where('posted_at', '<', CarbonImmutable::parse($request->input('history_to'), $data['store']->timezone)->addDay()->startOfDay()->utc());
+            }
+            $data['documents'] = $history->latest('posted_at')->orderByDesc('id')->paginate(20, ['*'], 'history_page')->withQueryString();
         }
         if ($page === 'cash') {
             $data['sessions'] = CashSession::latest('opened_at')->paginate(20);
@@ -131,13 +157,7 @@ class OperationsController extends Controller
         }
 
         if (in_array($page, ['sales', 'purchasing'])) {
-            $data['oldCart'] = [];
-            foreach (session()->getOldInput('lines', []) as $input) {
-                $product = Product::whereKey($input['product_id'] ?? '')->first();
-                if ($product) {
-                    $data['oldCart'][] = $input + ['name' => $product->name, 'sku' => $product->sku, 'base_unit' => $product->base_unit, 'units' => ProductUnit::where('product_id', $product->id)->get()->toArray(), 'discount' => '0', 'discount_type' => 'amount'];
-                }
-            }
+            $data['oldCart'] = $this->cartLines(session()->getOldInput('lines', []));
         }
 
         return view('operations.'.$page, $data);
@@ -151,7 +171,7 @@ class OperationsController extends Controller
         $products = Product::where('active', true)->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q))->orderBy('name')->limit(30)->get();
         $units = ProductUnit::whereIn('product_id', $products->pluck('id'))->get()->groupBy('product_id');
 
-        return response()->json($products->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku, 'barcode' => $product->barcode, 'base_unit' => $product->base_unit, 'quantity_micro' => $product->quantity_micro, 'price_minor' => $product->price_minor, 'units' => $units->get($product->id, collect())->values()])->values());
+        return response()->json($products->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku, 'barcode' => $product->barcode, 'base_unit' => $product->base_unit, 'fractional' => $product->fractional, 'quantity_micro' => $product->quantity_micro, 'price_minor' => $product->price_minor, 'units' => $units->get($product->id, collect())->values()])->values());
     }
 
     public function product(Request $request): RedirectResponse
@@ -199,7 +219,7 @@ class OperationsController extends Controller
             'sale' => [
                 'customer' => ['nullable', 'string', 'max:255'], 'lines' => ['required', 'array', 'min:1', 'max:100'],
                 'lines.*.product_id' => ['required', 'ulid'], 'lines.*.unit_id' => ['required', 'ulid'],
-                'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.price' => ['required', 'string', 'max:20'],
+                'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.price' => ['required', 'string', 'max:20'], 'lines.*.catalog_price_minor' => ['nullable', 'integer', 'min:0'],
                 'lines.*.discount' => ['required', 'string', 'max:20'], 'lines.*.discount_type' => ['required', Rule::in(['amount', 'percent'])],
                 'payments' => ['required', 'array', 'min:1', 'max:4'], 'payments.*.method' => $payment['method'],
                 'payments.*.amount' => ['required', 'string', 'max:20'], 'payments.*.reference' => $payment['reference'], 'payments.*.confirmed' => $payment['confirmed'],
@@ -279,67 +299,81 @@ class OperationsController extends Controller
 
     public function supplier(Request $request): RedirectResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'contact' => ['nullable', 'string', 'max:255'], 'address' => ['nullable', 'string', 'max:2000']]);
+        $data = $request->validate(['supplier_id' => ['nullable', 'ulid'], 'name' => ['required', 'string', 'max:255'], 'contact' => ['nullable', 'string', 'max:255'], 'address' => ['nullable', 'string', 'max:2000'], 'active' => ['nullable', 'boolean']]);
         DB::transaction(function () use ($data, $request): void {
             $store = $this->access->lock($request->user());
             $this->access->module('purchasing');
-            $supplier = Supplier::create($data);
-            StoreAccess::audit($request->user(), $store->id, 'supplier.created', $supplier->id);
+            $supplier = ! empty($data['supplier_id']) ? Supplier::whereKey($data['supplier_id'])->firstOrFail() : new Supplier;
+            $name = Str::squish($data['name']);
+            StoreAccess::check($name !== '', 'Enter the supplier name.');
+            if (! $supplier->exists || $name !== $supplier->name) {
+                StoreAccess::check(! Supplier::where('name', $name)->when($supplier->exists, fn ($q) => $q->whereKeyNot($supplier->id))->exists(), 'That supplier name is already registered, including archived suppliers. Edit the existing entry.');
+            }
+            $supplier->fill(['name' => $name, 'contact' => $data['contact'] ?? null, 'address' => $data['address'] ?? null, 'active' => $data['active'] ?? true])->save();
+            StoreAccess::audit($request->user(), $store->id, 'supplier.saved', $supplier->id, ['active' => $supplier->active]);
         });
 
-        return back()->with('status', 'Supplier added.');
+        return back()->with('status', 'Supplier saved. Existing orders keep their original supplier details.');
     }
 
-    public function purchase(Request $request): RedirectResponse
+    public function purchase(Request $request, string $store, ?string $order = null): RedirectResponse
     {
-        $data = $request->validate(['request_key' => ['required', 'uuid'], 'supplier_id' => ['required', 'ulid'], 'notes' => ['nullable', 'string', 'max:2000'], 'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.product_id' => ['required', 'ulid'], 'lines.*.unit_id' => ['required', 'ulid'], 'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.cost' => ['required', 'string', 'max:20']]);
-        $order = DB::transaction(function () use ($data, $request): PurchaseOrder {
-            $store = $this->access->lock($request->user());
-            $this->access->module('purchasing');
-            $this->access->module('catalog');
-            $this->access->module('inventory');
-            $fingerprint = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
-            if ($old = PurchaseOrder::where('request_key', $data['request_key'])->first()) {
-                StoreAccess::check(hash_equals($old->fingerprint ?? '', $fingerprint), 'This purchase submission has already been used with different details.');
+        $data = $request->validate(['request_key' => ['required', 'uuid'], 'revision' => [$order ? 'required' : 'nullable', 'integer', 'min:0'], 'supplier_id' => ['required', 'ulid'], 'notes' => ['nullable', 'string', 'max:2000'], 'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.product_id' => ['required', 'ulid'], 'lines.*.unit_id' => ['required', 'ulid'], 'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.cost' => ['required', 'string', 'max:20']]);
+        $saved = app(Purchasing::class)->draft($request->user(), $data, $order);
 
-                return $old;
-            }
-            $supplier = Supplier::whereKey($data['supplier_id'])->firstOrFail();
-            $order = PurchaseOrder::create(['fingerprint' => $fingerprint, 'supplier_id' => $supplier->id, 'supplier_name' => $supplier->name, 'request_key' => $data['request_key'], 'notes' => $data['notes'] ?? null]);
-            $seen = [];
-            foreach ($data['lines'] as $input) {
-                $product = Product::where('active', true)->whereKey($input['product_id'])->firstOrFail();
-                StoreAccess::check(! in_array($product->id, $seen), 'Combine duplicate products into one order line.');
-                $seen[] = $product->id;
-                $unit = ProductUnit::where('product_id', $product->id)->whereKey($input['unit_id'])->firstOrFail();
-                $qty = $this->operations->quantity($product, $input['quantity'], (int) $unit->factor_micro);
-                $cost = Amounts::ratio(Amounts::parse($input['cost'], 6), $qty, (int) $unit->factor_micro);
-                PurchaseOrderLine::create(['purchase_order_id' => $order->id, 'product_id' => $product->id, 'name' => $product->name, 'sku' => $product->sku, 'unit_label' => $unit->label, 'factor_micro' => $unit->factor_micro, 'quantity_micro' => $qty, 'total_cost_micro' => $cost]);
-            }
-            StoreAccess::audit($request->user(), $store->id, 'purchase.drafted', $order->id);
-
-            return $order;
-        }, 3);
-
-        return redirect()->route('store.order', [$this->context->id(), $order->id]);
+        return to_route('store.order', [$store, $saved->id])->with('status', $order ? 'Draft updated. Review it before placing the order.' : 'Draft saved. Review it before placing the order.');
     }
 
     public function order(string $store, string $order): View
     {
         $orderModel = PurchaseOrder::whereKey($order)->firstOrFail();
+        $lines = PurchaseOrderLine::where('purchase_order_id', $order)->get();
+        $inputs = $lines->map(fn ($line) => [
+            'product_id' => $line->product_id,
+            'unit_id' => ProductUnit::where('product_id', $line->product_id)->where('label', $line->unit_label)->value('id'),
+            'quantity' => Amounts::display(Amounts::ratio($line->quantity_micro, 1000000, $line->factor_micro), 6),
+            'cost' => Amounts::display($line->unit_cost_micro ?? Amounts::ratio($line->total_cost_micro, $line->factor_micro, $line->quantity_micro), 6),
+        ])->all();
+        if (session()->getOldInput('_form') === 'purchase-edit-'.$order) {
+            $inputs = session()->getOldInput('lines', []);
+        }
 
-        return view('operations.order', ['store' => $this->context->store(), 'page' => 'purchasing', 'modules' => StoreModule::pluck('mode', 'module_key')->all(), 'order' => $orderModel, 'lines' => PurchaseOrderLine::where('purchase_order_id', $order)->get(), 'receipts' => BusinessDocument::where('metadata->order_id', $order)->get()]);
+        return view('operations.order', ['store' => $this->context->store(), 'page' => 'purchasing', 'modules' => StoreModule::pluck('mode', 'module_key')->all(), 'order' => $orderModel, 'lines' => $lines,
+            'oldCart' => $this->cartLines($inputs), 'suppliers' => Supplier::where('active', true)->orderBy('name')->get(),
+            'receipts' => BusinessDocument::where('metadata->order_id', $order)->latest('posted_at')->get()]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function cartLines(mixed $inputs): array
+    {
+        $cart = [];
+        foreach (is_array($inputs) ? $inputs : [] as $input) {
+            if (! is_array($input) || ! is_string($input['product_id'] ?? null)) {
+                continue;
+            }
+            $product = Product::whereKey($input['product_id'])->first();
+            if ($product) {
+                $cart[] = array_merge($input, ['name' => $product->name, 'sku' => $product->sku, 'base_unit' => $product->base_unit, 'fractional' => $product->fractional, 'basePrice' => $product->price_minor,
+                    'units' => ProductUnit::where('product_id', $product->id)->get()->toArray()]) + ['discount' => '0', 'discount_type' => 'amount'];
+            }
+        }
+
+        return $cart;
     }
 
     public function orderStatus(Request $request, string $store, string $order): RedirectResponse
     {
-        $data = $request->validate(['status' => ['required', Rule::in(['placed', 'closed', 'cancelled'])], 'notes' => ['required', 'string', 'max:2000']]);
+        $data = $request->validate(['status' => ['required', Rule::in(['placed', 'closed', 'cancelled'])], 'revision' => ['nullable', 'integer', 'min:0'], 'notes' => ['required', 'string', 'max:2000']]);
         DB::transaction(function () use ($data, $request, $order): void {
             $store = $this->access->lock($request->user());
             $this->access->module('purchasing', $data['status'] !== 'placed');
             $po = PurchaseOrder::whereKey($order)->firstOrFail();
+            if ($data['status'] === 'placed') {
+                StoreAccess::check(Supplier::whereKey($po->supplier_id)->where('active', true)->exists(), 'This supplier is archived. Edit the draft to select an active supplier.');
+            }
+            StoreAccess::check(! isset($data['revision']) || (int) $po->revision === (int) $data['revision'], 'This order changed after you opened it. Reload and review it before continuing.');
             StoreAccess::check(($data['status'] === 'placed' && $po->status === 'draft') || (in_array($data['status'], ['closed', 'cancelled']) && in_array($po->status, ['draft', 'placed'])), 'This order cannot make that transition.');
-            $po->update(['status' => $data['status']]);
+            $po->update(['status' => $data['status'], 'revision' => (int) $po->revision + 1]);
             StoreAccess::audit($request->user(), $store->id, 'purchase.'.$data['status'], $po->id, ['reason' => $data['notes']]);
         });
 
@@ -356,5 +390,17 @@ class OperationsController extends Controller
         });
 
         return back()->with('status', 'Store profile updated.');
+    }
+
+    public function paymentSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['checkout_methods' => ['required', 'array', 'min:1', 'max:4'], 'checkout_methods.*' => ['required', 'distinct', Rule::in(array_keys(Store::PAYMENT_METHODS))]]);
+        DB::transaction(function () use ($request, $data): void {
+            $store = $this->access->lock($request->user());
+            $store->update(['checkout_methods' => array_values($data['checkout_methods'])]);
+            StoreAccess::audit($request->user(), $store->id, 'store.payment_methods_updated', $store->id, $data);
+        });
+
+        return back()->with('status', 'Checkout payment methods updated.');
     }
 }

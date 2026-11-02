@@ -16,6 +16,7 @@ use App\Services\StoreAccess;
 use App\Support\Tenancy\StoreContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -317,6 +318,149 @@ class StoreOperationsTest extends TestCase
         $this->assertSame(0, $before['net_sales']);
         $this->assertDatabaseHas('products', ['id' => $wire->id, 'quantity_micro' => 2500000, 'value_micro' => 12808640]);
         $this->assertLedger();
+    }
+
+    public function test_suppliers_can_be_corrected_and_archived_without_rewriting_order_history(): void
+    {
+        $this->post(route('store.suppliers.save', $this->store), ['name' => 'Original Supplier', 'contact' => 'Office'])->assertSessionHasNoErrors();
+        $supplier = DB::table('suppliers')->first();
+        $data = ['request_key' => (string) Str::uuid(), 'supplier_id' => $supplier->id, 'lines' => [['product_id' => $this->product->id, 'unit_id' => $this->unit->id, 'quantity' => '2', 'cost' => '10']]];
+        $this->post(route('store.purchases.save', $this->store), $data)->assertSessionHasNoErrors();
+        $order = DB::table('purchase_orders')->first();
+        $this->post(route('store.order.status', [$this->store, $order->id]), ['status' => 'placed', 'notes' => 'Reviewed'])->assertSessionHasNoErrors();
+        $this->post(route('store.suppliers.save', $this->store), ['supplier_id' => $supplier->id, 'name' => 'Corrected Supplier', 'active' => '0'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('purchase_orders', ['id' => $order->id, 'supplier_name' => 'Original Supplier']);
+        $this->post(route('store.purchases.save', $this->store), array_replace($data, ['request_key' => (string) Str::uuid()]))->assertSessionHasErrors();
+        $this->post(route('store.suppliers.save', $this->store), ['name' => ' corrected   supplier '])->assertSessionHasErrors();
+        $line = DB::table('purchase_order_lines')->first();
+        $this->postDocument('receipt', ['order_id' => $order->id, 'lines' => [['order_line_id' => $line->id, 'quantity' => '2']]]);
+        $this->assertDatabaseHas('products', ['id' => $this->product->id, 'quantity_micro' => 202000000]);
+        $this->assertLedger();
+    }
+
+    public function test_draft_edits_are_atomic_retryable_and_reject_stale_or_placed_orders(): void
+    {
+        $this->post(route('store.suppliers.save', $this->store), ['name' => 'Draft Supplier'])->assertSessionHasNoErrors();
+        $supplier = DB::table('suppliers')->first();
+        $input = ['request_key' => (string) Str::uuid(), 'supplier_id' => $supplier->id, 'lines' => [['product_id' => $this->product->id, 'unit_id' => $this->unit->id, 'quantity' => '1', 'cost' => '10.123456']]];
+        $this->post(route('store.purchases.save', $this->store), $input)->assertSessionHasNoErrors();
+        $order = DB::table('purchase_orders')->first();
+        $edit = array_replace($input, ['request_key' => (string) Str::uuid(), 'revision' => 0]);
+        $edit['lines'][0]['quantity'] = '3';
+        $url = route('store.purchases.update', [$this->store, $order->id]);
+        $this->post($url, $edit)->assertSessionHasNoErrors();
+        $this->post($url, $edit)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('purchase_orders', ['id' => $order->id, 'revision' => 1]);
+        $this->assertDatabaseCount('purchase_order_lines', 1);
+        $this->assertDatabaseHas('purchase_order_lines', ['purchase_order_id' => $order->id, 'quantity_micro' => 3000000, 'unit_cost_micro' => 10123456, 'total_cost_micro' => 30370368]);
+        $this->assertDatabaseHas('products', ['id' => $this->product->id, 'quantity_micro' => 200000000]);
+        $this->post($url, array_replace($edit, ['request_key' => (string) Str::uuid()]))->assertSessionHasErrors();
+        $invalid = array_replace($edit, ['request_key' => (string) Str::uuid(), 'revision' => 1]);
+        $invalid['lines'][0]['unit_id'] = (string) Str::ulid();
+        $this->post($url, $invalid)->assertNotFound();
+        $this->assertDatabaseHas('purchase_order_lines', ['purchase_order_id' => $order->id, 'quantity_micro' => 3000000]);
+        $this->get(route('store.order', [$this->store, $order->id]))->assertOk()->assertSee('Edit draft order');
+        $status = route('store.order.status', [$this->store, $order->id]);
+        $this->post($status, ['status' => 'placed', 'revision' => 0, 'notes' => 'Old tab'])->assertSessionHasErrors();
+        $this->post($status, ['status' => 'placed', 'revision' => 1, 'notes' => 'Reviewed current draft'])->assertSessionHasNoErrors();
+        $this->post($url, array_replace($edit, ['request_key' => (string) Str::uuid(), 'revision' => 2]))->assertSessionHasErrors();
+        $this->assertDatabaseHas('purchase_orders', ['id' => $order->id, 'status' => 'placed']);
+    }
+
+    public function test_checkout_method_changes_reject_stale_sales_but_preserve_posted_retries_and_refunds(): void
+    {
+        $this->post(route('store.payments.settings', $this->store), ['checkout_methods' => ['card']])->assertSessionHasNoErrors();
+        $this->post(route('store.payments.settings', $this->store), ['checkout_methods' => []])->assertSessionHasErrors();
+        $this->post(route('store.post', [$this->store, 'sale']), $this->saleData())->assertSessionHasErrors();
+        $this->assertDatabaseHas('products', ['id' => $this->product->id, 'quantity_micro' => 200000000]);
+        $data = $this->saleData();
+        $data['payments'] = [['method' => 'card', 'amount' => '45', 'reference' => 'CONFIRMED', 'confirmed' => '1']];
+        $sale = $this->postDocument('sale', $data);
+        $this->post(route('store.payments.settings', $this->store), ['checkout_methods' => ['cash']])->assertSessionHasNoErrors();
+        $this->postDocument('sale', $data);
+        $line = DB::table('document_lines')->where('business_document_id', $sale->id)->first();
+        $this->postDocument('return', ['original_id' => $sale->id, 'method' => 'card', 'reference' => 'REFUNDED', 'confirmed' => '1', 'lines' => [['source_line_id' => $line->id, 'quantity' => '3', 'disposition' => 'sellable']]]);
+        $this->assertDatabaseHas('cash_sessions', ['id' => $this->sessionId, 'expected_minor' => 50000]);
+        $this->assertLedger();
+    }
+
+    public function test_stale_catalog_price_is_rejected_without_stock_or_payment_effects(): void
+    {
+        $data = $this->saleData();
+        $data['lines'][0]['catalog_price_minor'] = 1500;
+        DB::table('products')->where('id', $this->product->id)->update(['price_minor' => 2000]);
+        $this->post(route('store.post', [$this->store, 'sale']), $data)->assertSessionHasErrors();
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseHas('products', ['id' => $this->product->id, 'quantity_micro' => 200000000]);
+        $data['lines'][0]['catalog_price_minor'] = 2000;
+        $data['lines'][0]['price'] = '20';
+        $sale = $this->postDocument('sale', $data);
+        $this->assertSame(6000, $sale->total_minor);
+    }
+
+    public function test_history_filters_use_local_dates_and_cannot_expose_another_stores_records(): void
+    {
+        $sale = $this->postDocument('sale', $this->saleData() + ['customer' => 'Northside customer']);
+        DB::table('business_documents')->where('id', $sale->id)->update(['posted_at' => '2026-11-01 16:00:00']);
+        $url = route('store.page', [$this->store, 'sales']);
+        $this->get($url.'?history_q=Northside&history_from=2026-11-02&history_to=2026-11-02')->assertOk()->assertSee(substr($sale->id, -10));
+        $this->get($url.'?history_q=Northside&history_from=2026-11-01&history_to=2026-11-01')->assertOk()->assertDontSee(substr($sale->id, -10));
+        $other = Store::factory()->create();
+        app(StoreContext::class)->set($other);
+        BusinessDocument::create(['kind' => 'sale', 'request_key' => (string) Str::uuid(), 'fingerprint' => str_repeat('a', 64), 'user_id' => $this->owner->id, 'metadata' => ['customer' => 'Private tenant customer'], 'posted_at' => now()]);
+        app(StoreContext::class)->clear();
+        $this->get($url.'?history_to=2026-11-02')->assertOk()->assertSee(substr($sale->id, -10));
+        $this->get($url.'?history_q=Private')->assertOk()->assertDontSee('Private tenant customer');
+        $this->get($url.'?history_kind=expense')->assertSessionHasErrors();
+    }
+
+    public function test_cash_session_detail_reconciles_closed_history_and_exports_safe_scoped_csv(): void
+    {
+        $this->post(route('store.cash', [$this->store, 'move']), ['request_key' => (string) Str::uuid(), 'session_id' => $this->sessionId, 'direction' => 'in', 'amount' => '10', 'notes' => '=SUM(1,1)'])->assertSessionHasNoErrors();
+        $this->post(route('store.cash', [$this->store, 'close']), ['request_key' => (string) Str::uuid(), 'session_id' => $this->sessionId, 'amount' => '510'])->assertSessionHasNoErrors();
+        $url = route('store.cash.show', [$this->store, $this->sessionId]);
+        $this->get($url)->assertOk()->assertSee('510.00')->assertDontSee('does not match');
+        $this->assertStringContainsString("'=SUM(1,1)", $this->get($url.'?export=1')->assertOk()->streamedContent());
+        $this->assertSame(1, DB::table('audit_events')->where('action', 'cash.session_exported')->count());
+        $other = Store::factory()->create();
+        $this->owner->memberships()->create(['store_id' => $other->id, 'role' => 'owner', 'status' => 'active']);
+        $this->get(route('store.cash.show', [$other, $this->sessionId]))->assertNotFound();
+        $this->get(route('store.cash.show', [$other, $this->sessionId, 'export' => 1]))->assertNotFound();
+    }
+
+    public function test_system_status_is_admin_only_and_reports_missing_scheduler(): void
+    {
+        $this->get(route('admin.health'))->assertForbidden();
+        $this->admin();
+        $this->get(route('admin.health'))->assertOk()->assertSee('No scheduler heartbeat received')->assertSee('Email is not configured');
+        Cache::put('scheduler:last_seen', now()->toIso8601String());
+        $this->get(route('admin.health'))->assertOk()->assertSee('Last heartbeat:')->assertDontSee('No scheduler heartbeat received');
+    }
+
+    public function test_reversing_a_partial_receipt_does_not_reopen_a_closed_order(): void
+    {
+        $this->post(route('store.suppliers.save', $this->store), ['name' => 'Closed Order Supplier'])->assertSessionHasNoErrors();
+        $supplier = DB::table('suppliers')->first();
+        $this->post(route('store.purchases.save', $this->store), ['request_key' => (string) Str::uuid(), 'supplier_id' => $supplier->id, 'lines' => [['product_id' => $this->product->id, 'unit_id' => $this->unit->id, 'quantity' => '2', 'cost' => '10']]])->assertSessionHasNoErrors();
+        $order = DB::table('purchase_orders')->first();
+        $status = route('store.order.status', [$this->store, $order->id]);
+        $this->post($status, ['status' => 'placed', 'notes' => 'Reviewed'])->assertSessionHasNoErrors();
+        $line = DB::table('purchase_order_lines')->first();
+        $receipt = $this->postDocument('receipt', ['order_id' => $order->id, 'lines' => [['order_line_id' => $line->id, 'quantity' => '1']]]);
+        $this->post($status, ['status' => 'closed', 'notes' => 'Supplier cannot fulfill remainder'])->assertSessionHasNoErrors();
+        $this->postDocument('receipt_reversal', ['original_id' => $receipt->id, 'notes' => 'Incorrect delivery']);
+        $this->assertDatabaseHas('purchase_orders', ['id' => $order->id, 'status' => 'closed']);
+        $this->assertDatabaseHas('purchase_order_lines', ['id' => $line->id, 'received_micro' => 0]);
+        $this->assertLedger();
+    }
+
+    public function test_stale_inventory_form_requires_a_recount_and_does_not_refresh_its_version(): void
+    {
+        $this->postDocument('sale', $this->saleData());
+        $url = route('store.page', [$this->store, 'inventory']);
+        $this->from($url)->post(route('store.post', [$this->store, 'adjustment']), ['_form' => 'stock-'.$this->product->id, 'request_key' => (string) Str::uuid(), 'product_id' => $this->product->id, 'stock_version' => 1, 'mode' => 'count', 'quantity' => '200', 'notes' => 'Old count'])->assertSessionHasErrors();
+        $this->get($url)->assertOk()->assertSee('Reload to recount')->assertSee('name="stock_version" value="1"', false)->assertSee('disabled>Post stock adjustment', false);
+        $this->assertDatabaseHas('products', ['id' => $this->product->id, 'quantity_micro' => 197000000, 'stock_version' => 2]);
     }
 
     private function assertLedger(): void

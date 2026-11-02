@@ -42,7 +42,7 @@
 <form class="hms-search" method="GET"><input name="q" value="{{ request('q') }}" placeholder="Search product, SKU, or barcode" aria-label="Search products"><button class="hms-secondary">Search</button></form>
 <div class="hms-table-wrap"><table><thead><tr><th>Product</th><th>Price / unit</th><th>On hand</th><th>Status</th><th>Manage</th></tr></thead><tbody>
 @forelse($products as $product)
-<tr><td><strong>{{ $product->name }}</strong><small>{{ $product->sku }}{{ $product->brand ? ' · '.$product->brand : '' }}{{ $product->category ? ' · '.$product->category : '' }}</small></td><td>{{ number_format($product->price_minor / 100, 2) }} / {{ $product->base_unit }}</td><td>{{ App\Support\Amounts::display($product->quantity_micro, 6) }}</td><td>{{ $product->active ? 'Active' : 'Archived' }}</td><td><a href="#product-{{ $product->id }}" x-data @click="document.getElementById('product-{{ $product->id }}').open = true">Details ↓</a></td></tr>
+<tr><td><strong>{{ $product->name }}</strong><small>{{ $product->sku }}{{ $product->brand ? ' · '.$product->brand : '' }}{{ $product->category ? ' · '.$product->category : '' }}</small></td><td>{{ number_format($product->price_minor / 100, 2) }} / {{ $product->base_unit }}</td><td>{{ App\Support\Amounts::quantity($product->quantity_micro) }}</td><td>{{ $product->active ? 'Active' : 'Archived' }}</td><td><a href="#product-{{ $product->id }}" x-data @click="document.getElementById('product-{{ $product->id }}').open = true">Details ↓</a></td></tr>
 @empty<tr><td colspan="5">No products found. Add a product to get started.</td></tr>@endforelse
 </tbody></table></div>{{ $products->links() }}
 @foreach($products as $product)
@@ -53,7 +53,7 @@
 <details class="hms-card" id="product-{{ $product->id }}" @if($editOld || $unitOld) open @endif>
     <summary>{{ $product->name }} · {{ $product->sku }}</summary>
     <div class="space-y-5 mt-5">
-        <p>Selling units: @foreach($units[$product->id] ?? [] as $unit)<span class="hms-badge">{{ $unit->label }} = {{ App\Support\Amounts::display($unit->factor_micro, 6) }} {{ $product->base_unit }}</span> @endforeach</p>
+        <p>Selling units: @foreach($units[$product->id] ?? [] as $unit)<span class="hms-badge">{{ $unit->label }} = {{ App\Support\Amounts::quantity($unit->factor_micro) }} {{ $product->base_unit }}</span> @endforeach</p>
         @if(($modules['catalog'] ?? null) === 'enabled')
         <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-4">
             @csrf<input type="hidden" name="_form" value="product-{{ $product->id }}"><input type="hidden" name="product_id" value="{{ $product->id }}"><input type="hidden" name="base_unit" value="{{ $product->base_unit }}"><input type="hidden" name="fractional" value="{{ (int) $product->fractional }}">

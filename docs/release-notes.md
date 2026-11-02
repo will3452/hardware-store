@@ -1,3 +1,18 @@
+# First-release workflow completion — November 2, 2026
+
+- Editable draft purchase orders with revision checks, atomic line replacement, and retry protection. Placed and received records keep their original snapshots. Receipt reversal preserves a deliberately closed or cancelled order.
+- Editable/archivable suppliers with normalized duplicate-name protection; archived suppliers remain available in historical receipts.
+- Simpler checkout with one payment row initially, split-payment controls, exact-remaining shortcut, due/change totals, configurable accepted methods, reliable Enter-to-scan, and stale catalog-price review.
+- Searchable, date/type-filtered Sales and Expenses history; local dates and tenant scope apply on the server.
+- Detailed current/closed cash-session reconciliation, printing, and complete formula-safe CSV export with explicit tenant scope during streaming.
+- Plain-language starting-cash and inventory guidance, compact quantity displays, and form-specific validation that preserves a stale stock version until the owner reloads and recounts.
+- Consistent report snapshots and audited report exports. Administrator System status shows scheduler, backup verification, mail transport, debug mode, and failed jobs.
+- Additive migration adds checkout methods, supplier active state, draft revisions/retry metadata, and original purchase unit cost. Existing data is retained; no seeding is required.
+- Validation: 88 tests / 545 assertions against MySQL, PHPStan, Pint, production asset build, local browser sale/draft-edit walkthrough, and 360px cash-screen check. A local synthetic-data backup restored to a separate database with zero stock/cash reconciliation or relationship errors. Production backups are verified on the server; production data was not downloaded for the rehearsal.
+- hPanel now has the every-minute Laravel scheduler. Automatic Git deployment into `public_html` is disabled; releases use the private checkout and explicit public assets.
+
+See [completion status](completion-status.md) for operational boundaries and deployment evidence.
+
 # Product entry update — November 2, 2026
 
 - Three required fields for a new product: name/variant, selling unit, and price. Store-scoped SKUs are generated under the store lock, with an optional custom code.
@@ -34,7 +49,7 @@ PHP and Asia/Manila are fixed onboarding defaults for this pilot. Monetary docum
 
 Operational forms use Blade and Alpine with ordinary server POST/redirect responses. Livewire/Fortify provide account settings and authentication. There is no production Node process. Checkout confirmation only appears after the database transaction commits.
 
-Invitations are manually shared by the administrator rather than emailed by an outbox in this release because production has no configured mail delivery. Draft purchase corrections use cancel-and-recreate rather than inline amendments. Existing posted records are never rewritten. Used transaction modules remain restricted rather than fully disabled when corrections could still be needed.
+Invitations are manually shared by the administrator rather than emailed by an outbox in this release because production has no configured mail delivery. Draft purchase corrections initially used cancel-and-recreate; the November 2 completion update adds draft editing with revision checks. Existing posted records are never rewritten. Used transaction modules remain restricted rather than fully disabled when corrections could still be needed.
 
 Tax remains unconfigured: sales preserve entered amounts and are labeled internal records, while profit is explicitly an estimate without tax separation. The owner's existing fiscal invoicing remains necessary. This is not a certification or a determination that a merchant is non-VAT.
 

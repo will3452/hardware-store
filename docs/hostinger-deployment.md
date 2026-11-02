@@ -206,7 +206,7 @@ Verification after repair: homepage, login, health endpoint, and compiled styles
 
 Use [the release notes](release-notes.md) and [user guide](user-guide.md) alongside this runbook. Operational posting is synchronous and does not depend on a background queue. The current host has one existing administrator with TOTP enrolled and no configured SMTP transport. The release preserves that identity and uses privately shared activation/recovery links for store owners.
 
-`php artisan app:backup` creates a private timestamped directory under `storage/app/backups/` containing a compressed consistent database dump, private attachments, the environment needed for key recovery, and SHA-256 checksums. The directory is mode 700; files are mode 600. A temporary MySQL options file keeps credentials out of process arguments and is removed afterward. A snapshot without `manifest.json` is incomplete. Keep backups outside `public_html`, monitor disk use, and protect any independent copy. No automatic deletion policy is imposed by this release.
+`php artisan app:backup` creates a private timestamped directory under `storage/app/backups/` containing a compressed consistent database dump, private attachments, the environment needed for key recovery, and SHA-256 checksums. The directory is mode 700; files are mode 600. A temporary MySQL options file keeps credentials out of process arguments and is removed afterward. A snapshot without `manifest.json` is incomplete. New snapshots also verify all payload checksums, gzip readability, and the private-file archive before success. Run `php artisan app:backup-verify` to reverify the latest snapshot or pass an explicit path under `storage/app/backups`. The verification marker is bound to the manifest; this verifies integrity, not recovery time or restored database semantics. Keep backups outside `public_html`, monitor disk use, and protect any independent copy. No automatic deletion policy is imposed by this release.
 
 The Laravel schedule includes bounded queue processing every minute and backups daily at 02:00 Asia/Manila. SSH on this host does **not** provide a `crontab` command, so enabling recurring execution requires an hPanel Custom cron entry:
 
@@ -216,10 +216,10 @@ Hour: *
 Day: *
 Month: *
 Weekday: *
-Command: /usr/bin/php /home/u589081721/domains/wgalas.lzrk.io/laravel/artisan schedule:run
+Command: cd /home/u589081721/domains/wgalas.lzrk.io/laravel && /usr/bin/php artisan schedule:run >> storage/logs/scheduler.log 2>&1
 ```
 
-The schedule definition alone does not install that hPanel entry. Until hPanel is configured, use `php artisan app:backup` manually and do not assume recurring snapshots run. Sales, stock, reports, invitations, and manual recovery links work without cron.
+This Custom cron entry was saved and verified in hPanel on November 2, 2026. `/usr/bin/php` resolves to PHP 8.3.36. The scheduler writes a heartbeat every minute; verify freshness under Admin → System status. Backups run at 02:00 Asia/Manila. Sales, stock, reports, invitations, and manual recovery links work without cron. Rotate the scheduler log and review backup disk use as part of hosting maintenance.
 
 Release procedure for this existing host: take and validate a private pre-release backup, enable maintenance, fast-forward the private checkout to the reviewed commit, install the matching compiled frontend, run additive migrations, rebuild configuration/routes/views, verify the runtime with a rollback-only synthetic transaction, then leave maintenance and verify HTTPS routes/assets. Do not reseed or regenerate the application key. Keep the preexisting untracked `bun.lock`; it is not a reason to overwrite application files.
 
@@ -229,6 +229,6 @@ For recovery, restore the database into an isolated database first, restore priv
 
 The release push triggered an additional Hostinger checkout directly into `public_html`. This was detected by the final exposure check, and the extra source tree was moved into the private release backup before restoring a public-only directory. The private application remained in `laravel`.
 
-The repository now includes a root `.htaccess` safety guard, and `public/.htaccess` denies source directories, hidden files, and direct PHP execution outside `index.php`. Only the intentional static allowlist and Laravel routes are served. This protects against a repeat checkout, but automatic source deployment into the document root is still the wrong release target. In hPanel Git settings, disable automatic deployment to `public_html` or retarget it to the private `laravel` directory and use the explicit public-asset release procedure. SSH access alone did not expose that hPanel configuration.
+The repository now includes a root `.htaccess` safety guard, and `public/.htaccess` denies source directories, hidden files, and direct PHP execution outside `index.php`. Only the intentional static allowlist and Laravel routes are served. This protects against a repeat checkout, but automatic source deployment into the document root is still the wrong release target. On November 2, 2026, **Deployments → Auto-deployment → Turn off auto-deployment** was applied and hPanel confirmed it is off. Keep it disabled until a release pipeline explicitly targets the private `laravel` directory and performs migrations, public-asset installation, and verification. Do not use the hPanel Redeploy button while its target remains `public_html`.
 
 After any Git push, check both the private application revision and the public directory contents. Never assume a successful Git webhook has migrated the database or installed the matching built assets.

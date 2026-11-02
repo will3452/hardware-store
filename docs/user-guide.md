@@ -22,12 +22,12 @@ For announcements, choose all stores or selected stores. A blank publication tim
 2. **Products → Add a product:** enter the name and size/variant, choose **Sell by**, and enter the selling price for one of that unit. The app generates a unique SKU automatically (for example, `P-000001`). Measured units such as meters and kilograms allow decimals automatically; pieces, boxes, sets, and other countable units use whole quantities. Prices start blank so zero must be intentional.
 3. For boxes or bundles, open the product details and add a fixed conversion. Example: `box100` equals `100 piece`. Conversions and base units cannot be rewritten; add a new conversion label or SKU when packaging changes.
 4. **Inventory:** expand each product and post opening quantity with its reviewed acquisition cost **per base unit**. Example: 200 pieces at PHP 10 each creates PHP 2,000 of stock value. Zero-cost inventory must be entered explicitly as zero.
-5. **Cash drawer:** count your opening float and open a session. One session is allowed per store.
+5. **Cash drawer:** count the starting cash already in the drawer and open a session (for example, PHP 500 for giving change; enter zero only if the drawer is empty). One session is allowed per store.
 6. **Point of sale:** search by name, SKU, or barcode. Select products, units, and quantities. Review prices and any fixed or percentage line discounts.
-7. Enter cash tendered and any completed card, bank, or e-wallet amounts. Noncash payments require a reference and confirmation. The app records payments; it does not charge or verify a payment provider.
+7. Choose a payment method and enter the amount received. Use **Exact remaining** to fill the balance or **Add split payment** for a second method. Review **Still due** and **Change** before submitting. Configure accepted checkout methods in **Store profile**. Enter only completed card, bank, or e-wallet amounts. Noncash payments require a reference and confirmation. The app records payments; it does not charge or verify a payment provider.
 8. Choose **Post paid sale**. Only the server's posted record confirms completion. The print view shows applied payments, cash tendered, and change.
 
-The app prevents negative stock, underpayment, duplicate submissions, and posting to a cash session that changed after the form opened. If your connection fails after submission, check sales history before starting a fresh sale. Repeating the same submission key returns its original outcome; changing its details is rejected.
+Scanning an exact barcode or SKU and pressing Enter adds the product. If its catalog price changes before posting, review the current price on the restored cart. The app prevents negative stock, underpayment, duplicate submissions, and posting to a cash session that changed after the form opened. If your connection fails after submission, check sales history before starting a fresh sale. Repeating the same submission key returns its original outcome; changing its details is rejected.
 
 ### Adding products one at a time
 
@@ -39,25 +39,32 @@ Duplicate SKUs and barcodes are blocked. The same product name, brand, and base 
 
 ## During the day
 
-- **Purchasing:** add a supplier, create a draft order, then place it. Record deliveries in the order's selected units. Partial receipts increase only received stock. Close/cancel outstanding quantities when appropriate. Correct a draft by cancelling and replacing it; acquisition costs do not automatically create cash expenses or supplier settlements.
-- **Inventory:** use physical count for the total actually counted, or damage for the quantity removed. A changed stock version forces a fresh count. Positive additions require a cost. Losses use the current moving weighted average cost.
+- **Purchasing:** add a supplier, create a draft order, then place it. Record deliveries in the order's selected units. Partial receipts increase only received stock. Close/cancel outstanding quantities when appropriate. Open **Edit draft order** to correct supplier, quantities, units, costs, or notes before placement. Changes from an older tab are rejected. Draft edits have no stock effect; acquisition costs do not automatically create cash expenses or supplier settlements.
+- **Suppliers:** correct supplier details or archive a supplier in Purchasing. Archived suppliers cannot be selected for new drafts or placements; existing receipts and supplier-name snapshots remain available.
+- **Inventory:** use physical count for the total actually counted, or damage for the quantity removed. If stock changes while the form is open, the submitted count remains visible but cannot be posted: reload, recount, and enter the new count. Positive additions require a cost. Losses use the current moving weighted average cost.
 - **Returns:** open the original sale, expand the return form, enter quantities in **base units**, choose sellable or damaged, and confirm the refund. Partial returns use the original pricing, discount, and cost. Damaged returns record a stock loss. An open cash session is required even for a noncash refund.
 - **Expenses:** record only paid operating costs. Cash expenses reduce the drawer once; noncash expenses do not. Do not enter inventory purchases, owner drawings, or opening float as operating expenses.
 - **Corrections:** posted records cannot be edited. Full expense reversals credit the current drawer or record a confirmed recovered noncash payment. Receipt reversals require the receipt to remain the latest stock movement for every affected product; downstream stock movements block reversal.
+- **Find a record:** Sales and Expenses history can be filtered by record number, customer/payee/notes, type, and local posting-date range. Open the matching record to print, attach supporting files, or make an allowed correction.
 - **Supporting documents:** open a posted record to attach a receipt or delivery document. JPG, PNG, and PDF are supported, up to 5 MB each and ten files per record. Files remain private to the store and download through authorized routes.
 
 ## Close and review
 
 1. Pause checkout and count actual cash.
 2. In **Cash drawer**, enter the count and an explanation if it differs from expected cash. Close the session. Closing counts are permanent; a cash difference does not become an invented sale or expense.
-3. Use **Reports** to select posting dates, inspect sales, payments, cost, expenses, inventory losses, estimated profit, product performance, and end-date inventory.
-4. Export summary, product, or inventory CSV. Quantity columns retain their base unit; unlike units are not added together.
+3. Open **Details / export** beside any cash session to review its movements, expected/count/variance, print the session, or download the complete CSV.
+4. Use **Reports** to select posting dates, inspect sales, payments, cost, expenses, inventory losses, estimated profit, product performance, and end-date inventory.
+5. Export summary, product, or inventory CSV. Quantity columns retain their base unit; unlike units are not added together.
 
 The operating estimate equals recorded sales after returns minus recorded cost of goods sold, paid operating expenses, and inventory losses. It excludes unpaid liabilities, depreciation, financing costs, and income tax. Stock gains are shown separately. Tax has not been separated from recorded amounts, so use these as management estimates.
 
 ## Invoice and tax boundary
 
 The printed sale is an **internal sales record**, not a BIR-registered invoice. No VAT calculation or tax-exempt status is inferred. Continue using the store's existing registered invoicing process. Tax setup, compliant document numbering, and the relevant fiscal requirements require each store's actual registration details before this app replaces that process. [BIR invoicing clarification](https://bir-cdn.bir.gov.ph/BIR/pdf/RMC%20No.%2077-2024.pdf).
+
+## System status
+
+Platform administrators with store-management access can open **System status** to check the scheduler heartbeat, latest verified backup, mail configuration, production debug mode, and failed jobs. A missing heartbeat or stale backup needs operator attention. Backups run daily at 02:00 Asia/Manila; verification checks archive readability and checksums and is separate from a full restore rehearsal.
 
 ## Account access and help
 

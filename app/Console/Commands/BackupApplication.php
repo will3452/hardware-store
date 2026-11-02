@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\RecoverySnapshots;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
@@ -53,6 +54,7 @@ class BackupApplication extends Command
             $manifest = ['created_at' => now()->utc()->toIso8601String(), 'database' => hash_file('sha256', $sql), 'private_files' => hash_file('sha256', $directory.'/private-files.tar.gz'), 'environment' => hash_file('sha256', $directory.'/environment')];
             file_put_contents($directory.'/manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
             chmod($directory.'/manifest.json', 0600);
+            app(RecoverySnapshots::class)->verify($directory);
         } catch (\Throwable) {
             $this->error('Backup incomplete. Check disk space, mysqldump, and private storage. This snapshot must not be used for recovery.');
 

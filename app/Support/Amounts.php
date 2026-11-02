@@ -33,4 +33,9 @@ final class Amounts
     {
         return (string) BigDecimal::of($value)->dividedBy(10 ** $scale, $scale, RoundingMode::HalfUp);
     }
+
+    public static function quantity(int|string $value): string
+    {
+        return rtrim(rtrim(self::display($value, 6), '0'), '.');
+    }
 }

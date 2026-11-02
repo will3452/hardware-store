@@ -9,6 +9,7 @@ use App\Models\StoreInvitation;
 use App\Models\StoreMembership;
 use App\Models\User;
 use App\Services\Invitations;
+use App\Services\RecoverySnapshots;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
@@ -16,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -24,6 +26,22 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
+    public function health(Request $request, RecoverySnapshots $snapshots): View
+    {
+        StoreAccess::requirePermission($request->user(), 'platform.stores.manage');
+        $heartbeat = Cache::get('scheduler:last_seen');
+        $backup = $snapshots->latest();
+        $checks = [
+            ['label' => 'Scheduled tasks', 'ready' => is_string($heartbeat) && CarbonImmutable::parse($heartbeat)->isAfter(now()->subMinutes(5)), 'detail' => is_string($heartbeat) ? 'Last heartbeat: '.CarbonImmutable::parse($heartbeat)->timezone('Asia/Manila')->format('M j, Y H:i:s') : 'No scheduler heartbeat received. Configure the every-minute task in hosting.'],
+            ['label' => 'Recovery snapshots', 'ready' => $backup && $backup['verified_at'] && CarbonImmutable::parse($backup['created_at'])->isAfter(now()->subHours(26)), 'detail' => $backup ? 'Latest snapshot: '.CarbonImmutable::parse($backup['created_at'])->timezone('Asia/Manila')->format('M j, Y H:i:s').($backup['verified_at'] ? ' · checksums verified' : ' · verification pending') : 'No complete recovery snapshot found.'],
+            ['label' => 'Account email delivery', 'ready' => ! in_array(config('mail.default'), ['log', 'array']), 'detail' => in_array(config('mail.default'), ['log', 'array']) ? 'Email is not configured. Share activation and recovery links privately from store management.' : 'Email transport configured. A delivery test is still needed before relying on email.'],
+            ['label' => 'Production error display', 'ready' => ! config('app.debug'), 'detail' => config('app.debug') ? 'Detailed error display is enabled.' : 'Detailed error display is disabled.'],
+            ['label' => 'Background jobs', 'ready' => DB::table('failed_jobs')->count() === 0, 'detail' => DB::table('failed_jobs')->count().' failed jobs awaiting review.'],
+        ];
+
+        return view('admin.health', compact('checks'));
+    }
+
     public function index(Request $request, Reports $reports): View|StreamedResponse
     {
         $request->validate(['from' => ['nullable', 'date_format:Y-m-d'], 'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'], 'store_id' => ['nullable', 'ulid', 'exists:stores,id']]);
