@@ -18,6 +18,7 @@ use App\Models\PurchaseOrderLine;
 use App\Models\StoreModule;
 use App\Models\Supplier;
 use App\Services\Operations;
+use App\Services\ProductCatalog;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
@@ -40,6 +41,12 @@ class OperationsController extends Controller
         $this->access->history($page);
         $data = ['store' => $this->context->store(), 'page' => $page, 'modules' => StoreModule::pluck('mode', 'module_key')->all()];
         $data['session'] = CashSession::whereNull('closed_at')->first();
+        if ($page === 'products') {
+            $catalog = app(ProductCatalog::class);
+            $data['categories'] = $catalog->choices('category');
+            $data['brands'] = $catalog->choices('brand');
+            $data['sellingUnits'] = ProductCatalog::UNITS;
+        }
         if (in_array($page, ['products', 'inventory', 'sales', 'purchasing'])) {
             $request->validate(['q' => ['nullable', 'string', 'max:100']]);
             $query = Product::query()->orderBy('name');
@@ -150,31 +157,20 @@ class OperationsController extends Controller
     public function product(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'product_id' => ['nullable', 'ulid'], 'sku' => ['required', 'string', 'max:80'], 'barcode' => ['nullable', 'string', 'max:100'],
+            'product_id' => ['nullable', 'ulid'], 'sku' => ['nullable', 'string', 'max:80'], 'barcode' => ['nullable', 'string', 'max:100', 'regex:/^\S+$/u'],
             'name' => ['required', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:80'], 'brand' => ['nullable', 'string', 'max:80'],
+            'category_choice' => ['nullable', 'string', 'max:86'], 'brand_choice' => ['nullable', 'string', 'max:86'],
             'base_unit' => ['required', 'string', 'max:30'], 'fractional' => ['boolean'], 'active' => ['boolean'],
-            'price' => ['required', 'string', 'max:20'], 'reorder' => ['required', 'string', 'max:20'],
+            'price' => ['required', 'string', 'regex:/^\d{1,9}(\.\d{1,2})?$/D'], 'reorder' => ['nullable', 'string', 'regex:/^\d{1,9}(\.\d{1,6})?$/D'],
+            'save_action' => ['nullable', Rule::in(['save', 'another'])],
         ]);
-        DB::transaction(function () use ($data, $request): void {
-            $store = $this->access->lock($request->user());
-            $this->access->module('catalog');
-            $product = ! empty($data['product_id']) ? Product::whereKey($data['product_id'])->firstOrFail() : new Product;
-            StoreAccess::check(! Product::where('sku', $data['sku'])->when($product->exists, fn ($q) => $q->where('id', '!=', $product->id))->exists(), 'That SKU is already in use.');
-            StoreAccess::check(empty($data['barcode']) || ! Product::where('barcode', $data['barcode'])->when($product->exists, fn ($q) => $q->where('id', '!=', $product->id))->exists(), 'That barcode is already in use.');
-            if ($product->exists) {
-                StoreAccess::check($product->base_unit === $data['base_unit'] && (bool) $product->fractional === (bool) ($data['fractional'] ?? false), 'Base units and fractional settings are fixed. Create a new SKU for a different base unit.');
-            }
-            $product->fill(array_intersect_key($data, array_flip(['sku', 'barcode', 'name', 'category', 'brand', 'base_unit'])));
-            $product->price_minor = Amounts::parse($data['price']);
-            $product->reorder_micro = Amounts::parse($data['reorder'], 6);
-            $product->fractional = $data['fractional'] ?? false;
-            $product->active = $data['active'] ?? true;
-            $product->save();
-            ProductUnit::firstOrCreate(['product_id' => $product->id, 'label' => $product->base_unit], ['factor_micro' => 1000000]);
-            StoreAccess::audit($request->user(), $store->id, 'product.saved', $product->id, ['sku' => $product->sku, 'active' => $product->active]);
-        }, 3);
+        $product = app(ProductCatalog::class)->save($request->user(), $data);
+        if (empty($data['product_id']) && ($data['save_action'] ?? 'save') === 'another') {
+            return to_route('store.page', [$this->context->id(), 'products'])->with('status', $product->name.' saved · '.$product->sku.'. Ready for the next product.')
+                ->with('product_next', $product->only(['category', 'brand', 'base_unit']));
+        }
 
-        return back()->with('status', 'Product saved.');
+        return back()->with('status', $product->name.' saved · '.$product->sku.'.');
     }
 
     public function unit(Request $request): RedirectResponse

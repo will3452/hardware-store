@@ -116,6 +116,10 @@ select:focus[data-flux-control] {
 .dark .hms-workspace td { border-color: #343c37; }
 .hms-workspace td a, .hms-steps a { text-decoration: underline; text-underline-offset: 3px; }
 .hms-workspace summary { cursor: pointer; }
+.hms-product-options { border-top: 1px solid var(--color-zinc-300); padding-top: 1rem; }
+.dark .hms-product-options { border-color: #414743; }
+.hms-product-actions { display: flex; gap: .7rem; flex-wrap: wrap; align-items: center; }
+.hms-product-actions [aria-disabled=true] { opacity: .6; cursor: wait; }
 .hms-steps { display: grid; gap: .8rem; padding-left: 1.3rem; list-style: decimal; }
 .hms-steps span { display: block; font-size: .75rem; color: #7a8e83; }
 [x-cloak] { display: none !important; }

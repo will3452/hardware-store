@@ -1,3 +1,12 @@
+window.hmsProductForm = (units, unit) => ({
+    units, unit, busy: false,
+    get fractional() { return this.units[this.unit]?.fractional || false; },
+    submit(event) {
+        if (this.busy) event.preventDefault();
+        else this.busy = true;
+    }
+});
+
 window.hmsCart = (endpoint, mode, initial = []) => ({
     query: '', results: [], lines: initial, busy: false, searching: false, searchError: '', sequence: 0,
     init() { this.search(); },

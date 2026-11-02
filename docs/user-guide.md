@@ -19,7 +19,7 @@ For announcements, choose all stores or selected stores. A blank publication tim
 ## Prepare a store for its first sale
 
 1. Open **Store Portal**, then select the store.
-2. **Products:** add each variant with its own SKU. Choose a base unit: piece, meter, kg, etc. Enable fractional quantities only when appropriate. The selling price is per base unit.
+2. **Products → Add a product:** enter the name and size/variant, choose **Sell by**, and enter the selling price for one of that unit. The app generates a unique SKU automatically (for example, `P-000001`). Measured units such as meters and kilograms allow decimals automatically; pieces, boxes, sets, and other countable units use whole quantities. Prices start blank so zero must be intentional.
 3. For boxes or bundles, open the product details and add a fixed conversion. Example: `box100` equals `100 piece`. Conversions and base units cannot be rewritten; add a new conversion label or SKU when packaging changes.
 4. **Inventory:** expand each product and post opening quantity with its reviewed acquisition cost **per base unit**. Example: 200 pieces at PHP 10 each creates PHP 2,000 of stock value. Zero-cost inventory must be entered explicitly as zero.
 5. **Cash drawer:** count your opening float and open a session. One session is allowed per store.
@@ -28,6 +28,14 @@ For announcements, choose all stores or selected stores. A blank publication tim
 8. Choose **Post paid sale**. Only the server's posted record confirms completion. The print view shows applied payments, cash tendered, and change.
 
 The app prevents negative stock, underpayment, duplicate submissions, and posting to a cash session that changed after the form opened. If your connection fails after submission, check sales history before starting a fresh sale. Repeating the same submission key returns its original outcome; changing its details is rejected.
+
+### Adding products one at a time
+
+Expand **Optional details** to choose a category or brand from your store’s lists. Common hardware categories are provided. Choose **Add new** only when the label is missing; it becomes available for the next product. Extra spaces and differences in capitalization reuse the existing label. You can also scan/type a barcode, supply your own SKU, or set a low-stock alert. A blank custom SKU is generated on save; a zero low-stock level alerts at out of stock.
+
+Use **Save and add another** for a run of products. It keeps the selling unit, category, and brand while clearing the name, price, barcode, custom SKU, and stock alert. The next name field receives focus. Review the unit and price for every variant. Opening stock is still recorded separately in Inventory, with its reviewed cost.
+
+Duplicate SKUs and barcodes are blocked. The same product name, brand, and base unit cannot be registered again, including archived products; find and edit/reactivate the existing product or include the different size/variant in its name. Repeated submit clicks are guarded, and validation keeps entries in the form you were editing. Existing products retain their original units and stock history.
 
 ## During the day
 

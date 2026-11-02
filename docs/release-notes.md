@@ -1,3 +1,12 @@
+# Product entry update — November 2, 2026
+
+- Three required fields for a new product: name/variant, selling unit, and price. Store-scoped SKUs are generated under the store lock, with an optional custom code.
+- Standard selling-unit choices set fractional rules on the server. Existing custom units and historical stock remain unchanged.
+- Optional category/brand selectors reuse store labels, offer deliberate new-label entry, normalize whitespace/case, and include common hardware categories.
+- Save-and-add-another carries only unit/category/brand; product-specific fields reset. Price starts blank; zero remains an explicit choice.
+- Duplicate name/brand/unit combinations (including archived products), SKUs, and barcodes are rejected. Whole-unit reorder thresholds cannot contain fractions.
+- Validation restores only the submitted form and opens it for correction. Other product forms retain their own values. No schema migration or seed is required for this update.
+
 # Operational pilot release — October 31, 2026
 
 Version 0.3 replaces the portal placeholders with usable online store workflows. The original PRD remains the product target; this document identifies the shipped implementation and remaining validation boundaries.
