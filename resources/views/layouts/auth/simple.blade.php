@@ -1,29 +1,33 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>
-        @include('partials.head')
-    </head>
-    <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
-        <div class="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div class="flex w-full max-w-sm flex-col gap-2">
-                <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium" wire:navigate>
-                    <span class="flex h-9 w-9 mb-1 items-center justify-center rounded-md">
-                        <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
-                    </span>
-                    <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>@include('partials.head')</head>
+    <body class="pyesio-auth antialiased">
+        <div class="pyesio-auth-layout">
+            <section class="pyesio-auth-story" aria-label="About Pyesio">
+                <a href="{{ route('home') }}" class="pyesio-auth-logo" aria-label="Pyesio home" wire:navigate>
+                    <img src="{{ Vite::asset('resources/images/brand/pyesio-logo-transparent.png') }}" alt="Pyesio. Hardware business, made simple." width="2172" height="724">
                 </a>
-                <div class="flex flex-col gap-6">
-                    {{ $slot }}
+                <div class="pyesio-auth-message">
+                    <span class="pyesio-kicker">YOUR EVERYDAY STORE WORKSPACE</span>
+                    <h1>A clearer view<br>of your <span>business.</span></h1>
+                    <p>From the first delivery to the last sale, keep your products, stock, and daily numbers together.</p>
+                    <div class="pyesio-auth-features" aria-label="Store workflows">
+                        <span><flux:icon.cube variant="outline" class="size-5" /> Track your stock</span>
+                        <span><flux:icon.shopping-cart variant="outline" class="size-5" /> Keep sales moving</span>
+                        <span><flux:icon.chart-bar variant="outline" class="size-5" /> Know your numbers</span>
+                    </div>
                 </div>
-            </div>
+                <p class="pyesio-auth-note">Built for the business you run every day.</p>
+            </section>
+            <main class="pyesio-auth-main">
+                <a href="{{ route('home') }}" class="pyesio-auth-mobile-logo" aria-label="Pyesio home" wire:navigate>
+                    <img src="{{ Vite::asset('resources/images/brand/pyesio-logo-transparent.png') }}" alt="Pyesio. Hardware business, made simple." width="2172" height="724">
+                </a>
+                <div class="pyesio-auth-card">{{ $slot }}</div>
+                <p class="pyesio-auth-footer">{{ config('brand.tagline') }}</p>
+            </main>
         </div>
-
-        @persist('toast')
-            <flux:toast.group>
-                <flux:toast />
-            </flux:toast.group>
-        @endpersist
-
+        @persist('toast')<flux:toast.group><flux:toast /></flux:toast.group>@endpersist
         @fluxScripts
     </body>
 </html>

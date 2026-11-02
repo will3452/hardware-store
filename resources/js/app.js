@@ -1,3 +1,6 @@
+// Keep supplied brand files in the manifest for Blade image and favicon URLs.
+window.pyesioBrandAssets = import.meta.glob('../images/brand/*.png', { eager: true, query: '?url', import: 'default' });
+
 window.hmsProductForm = (units, unit) => ({
     units, unit, busy: false,
     get fractional() { return this.units[this.unit]?.fractional || false; },

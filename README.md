@@ -1,4 +1,6 @@
-# Hardware Store Management System
+# Pyesio — Hardware Store Management
+
+Hardware business, made simple. See [branding](docs/branding.md) for the supplied identity and interface palette.
 
 An online system for independent hardware store businesses. A Platform Admin registers stores, controls their enabled modules, publishes announcements, and reviews centralized performance reports. Each store operates through its own Store Portal and starts with one Store Owner account.
 

@@ -1,3 +1,13 @@
+# Pyesio branding — November 2, 2026
+
+- Applied the supplied Pyesio icon, logo, and tagline to application navigation, sign-in/recovery/activation screens, page titles, favicon, and touch icon.
+- Reworked the shared visual style around navy, orange, light surfaces, clearer fields and tables, dashboard cards, and active navigation with icons. Both light and dark appearances remain supported.
+- Branded workspace selection and account screens; removed unused starter branding and consolidated alternate layouts onto the supported shells.
+- Brand images are original supplied PNGs served through Vite's hashed manifest under the existing protected public layout. No database migration or production environment change is required.
+- Verification: existing 88 tests / 545 assertions, PHPStan, Pint, build and Blade compilation; desktop light/dark dashboard, desktop sign-in, and mobile product/authentication inspection.
+
+See [branding notes](branding.md) for assets, palette, and deployment details.
+
 # First-release workflow completion — November 2, 2026
 
 - Editable draft purchase orders with revision checks, atomic line replacement, and retry protection. Placed and received records keep their original snapshots. Receipt reversal preserves a deliberately closed or cancelled order.

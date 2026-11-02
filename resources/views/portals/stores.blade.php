@@ -6,8 +6,8 @@
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
             @forelse ($memberships as $membership)
-                <a href="{{ route('store.dashboard', $membership->store_id) }}" class="rounded-xl border border-zinc-200 p-6 transition hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500" wire:navigate>
-                    <flux:heading>{{ $membership->store->display_name }}</flux:heading>
+                <a href="{{ route('store.dashboard', $membership->store_id) }}" class="pyesio-launch-card" wire:navigate>
+                    <span class="pyesio-launch-icon"><flux:icon.building-storefront class="size-6" /></span><flux:heading>{{ $membership->store->display_name }}</flux:heading>
                     <flux:text class="mt-2">{{ $membership->store->city }}</flux:text>
                     <flux:text class="mt-4">{{ __('Open store') }} &rarr;</flux:text>
                 </a>
