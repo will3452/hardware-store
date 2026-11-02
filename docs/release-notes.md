@@ -8,8 +8,8 @@
 - Plain-language starting-cash and inventory guidance, compact quantity displays, and form-specific validation that preserves a stale stock version until the owner reloads and recounts.
 - Consistent report snapshots and audited report exports. Administrator System status shows scheduler, backup verification, mail transport, debug mode, and failed jobs.
 - Additive migration adds checkout methods, supplier active state, draft revisions/retry metadata, and original purchase unit cost. Existing data is retained; no seeding is required.
-- Validation: 88 tests / 545 assertions against MySQL, PHPStan, Pint, production asset build, local browser sale/draft-edit walkthrough, and 360px cash-screen check. A local synthetic-data backup restored to a separate database with zero stock/cash reconciliation or relationship errors. Production backups are verified on the server; production data was not downloaded for the rehearsal.
-- hPanel now has the every-minute Laravel scheduler. Automatic Git deployment into `public_html` is disabled; releases use the private checkout and explicit public assets.
+- Validation: 88 tests / 545 assertions against MySQL, PHPStan, Pint, production asset build, local browser sale/draft-edit walkthrough, and 360px cash/checkout checks. A local synthetic-data backup restored to a separate database with zero stock/cash reconciliation or relationship errors. Production backups are verified on the server; production data was not downloaded for the rehearsal.
+- hPanel now runs the every-minute Laravel scheduler through a private shell wrapper; automatic heartbeat and queue execution were confirmed at 11:17 Asia/Manila. Automatic Git deployment into `public_html` is disabled; releases use the private checkout and explicit public assets.
 
 See [completion status](completion-status.md) for operational boundaries and deployment evidence.
 

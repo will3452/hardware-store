@@ -216,10 +216,10 @@ Hour: *
 Day: *
 Month: *
 Weekday: *
-Command: cd /home/u589081721/domains/wgalas.lzrk.io/laravel && /usr/bin/php artisan schedule:run >> storage/logs/scheduler.log 2>&1
+Command: /bin/sh /home/u589081721/domains/wgalas.lzrk.io/scheduler.sh
 ```
 
-This Custom cron entry was saved and verified in hPanel on November 2, 2026. `/usr/bin/php` resolves to PHP 8.3.36. The scheduler writes a heartbeat every minute; verify freshness under Admin → System status. Backups run at 02:00 Asia/Manila. Sales, stock, reports, invitations, and manual recovery links work without cron. Rotate the scheduler log and review backup disk use as part of hosting maintenance.
+Copy `deployment/hostinger/scheduler.sh` to `/home/u589081721/domains/wgalas.lzrk.io/scheduler.sh`, outside the public directory. The wrapper changes to the private application and redirects output to its scheduler log; hPanel receives no shell operators. This Custom cron entry was saved in hPanel on November 2, 2026; automatic heartbeat and queue execution were verified at 11:17:01 Asia/Manila. `/usr/bin/php` resolves to PHP 8.3.36. The scheduler writes a heartbeat every minute; verify freshness under Admin → System status. Backups run at 02:00 Asia/Manila. Sales, stock, reports, invitations, and manual recovery links work without cron. Rotate the scheduler log and review backup disk use as part of hosting maintenance.
 
 Release procedure for this existing host: take and validate a private pre-release backup, enable maintenance, fast-forward the private checkout to the reviewed commit, install the matching compiled frontend, run additive migrations, rebuild configuration/routes/views, verify the runtime with a rollback-only synthetic transaction, then leave maintenance and verify HTTPS routes/assets. Do not reseed or regenerate the application key. Keep the preexisting untracked `bun.lock`; it is not a reason to overwrite application files.
 

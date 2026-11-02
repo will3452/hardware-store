@@ -19,10 +19,13 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 - `composer test`: **88 tests, 545 assertions**, including PHPStan and Pint; MySQL integration and separate-process concurrency tests pass.
 - `npm run build`: production assets built successfully without a production Node process.
-- Browser walkthrough with local synthetic data: scan item, cash/e-wallet split totaling PHP 300 against PHP 285, PHP 15 change, committed record; create a purchase draft and edit quantity without changing stock; cash-session reconciliation and 360px layout.
+- Browser walkthrough with local synthetic data: scan item, cash/e-wallet split totaling PHP 300 against PHP 285, PHP 15 change, committed record; create a purchase draft and edit quantity without changing stock; cash-session reconciliation and 360px cash and checkout layouts.
 - Local restore rehearsal: compressed development database imported into a separate recovery database. Restored 1 synthetic store, 4 products, 6 documents, and 11 audit events. Stock/cash discrepancies and orphaned document/attachment/membership relationships: **zero**. Private archive extracted; matching local environment retained. This small fixture is not a production-size or per-store selective recovery drill.
 - hPanel: auto-deployment to the public document root switched off; `* * * * *` Custom scheduler saved. PHP CLI resolves to 8.3.36.
-- Production deployment and heartbeat evidence will be recorded after release verification.
+- Production application release `ec72092` was installed in the private Laravel checkout with its matching built assets and additive migration. Rollback-only synthetic checks passed for product entry, payment configuration, draft editing/retry, inventory posting, and eight authenticated screens; synthetic rows were rolled back.
+- HTTPS checks: home/login/health/assets return 200; protected portals redirect to login; public registration is absent; environment/Git/source/log paths are blocked. Production environment and existing records were preserved.
+- Fresh production snapshot `20261102-031234-c877d0` passed on-server database/private-file/environment checksums and archive-readability verification. Production debug is off and failed jobs count is zero.
+- Automatic scheduler execution confirmed: hPanel invoked the private `scheduler.sh` wrapper at **2026-11-02 03:17:01 UTC / 11:17:01 Asia/Manila**. The heartbeat and bounded queue task completed successfully; no manual scheduler execution was used as this evidence. Daily backup is scheduled for 02:00 Asia/Manila.
 
 ## Boundaries for daily use
 
