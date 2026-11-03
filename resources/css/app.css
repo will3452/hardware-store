@@ -76,6 +76,7 @@ select:focus[data-flux-control] {
     --pyesio-border: #dce3ec;
     --pyesio-soft: #edf2f8;
     --pyesio-tint: #fff1e4;
+    --pyesio-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23596b81' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 .dark {
     --pyesio-text: #edf2fa;
@@ -85,6 +86,7 @@ select:focus[data-flux-control] {
     --pyesio-border: #2b3d56;
     --pyesio-soft: #1a2d47;
     --pyesio-tint: #342b25;
+    --pyesio-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23a7b6cb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 .pyesio-app { background: var(--pyesio-page); color: var(--pyesio-text); }
 .pyesio-app [data-flux-main] { min-width: 0; }
@@ -139,6 +141,7 @@ select:focus[data-flux-control] {
 .hms-field > span { font-weight: 600; }
 .hms-workspace input:not([type=checkbox]):not([type=hidden]), .hms-workspace select, .hms-workspace textarea { width: 100%; border: 1px solid #bdc9d8; border-radius: .55rem; padding: .65rem .8rem; background: var(--pyesio-surface); color: var(--pyesio-text); min-width: 0; min-height: 44px; }
 .dark .hms-workspace input:not([type=checkbox]):not([type=hidden]), .dark .hms-workspace select, .dark .hms-workspace textarea { border-color: #465b78; color-scheme: dark; }
+.hms-workspace select:not([multiple]):is(:not([size]), [size="1"]) { appearance: none; -webkit-appearance: none; padding-right: 2.5rem; background-image: var(--pyesio-select-arrow); background-repeat: no-repeat; background-position: right .75rem center; background-size: 1rem 1rem; }
 .hms-workspace :is(input, select, textarea, button, a, summary):focus-visible, .pyesio-brand:focus-visible { outline: 2px solid #c26313; outline-offset: 3px; }
 .dark .hms-workspace :is(input, select, textarea, button, a, summary):focus-visible { outline-color: #ffad66; }
 .hms-primary, .hms-secondary, .hms-danger { display: inline-flex; justify-content: center; align-items: center; gap: .5rem; border-radius: .55rem; padding: .7rem 1.1rem; min-height: 44px; font-size: .85rem; font-weight: 650; cursor: pointer; line-height: 1.3; text-align: center; }
@@ -176,7 +179,7 @@ select:focus[data-flux-control] {
 .hms-record-controls label { font-size: .78rem; white-space: nowrap; }
 .hms-record-controls .hms-secondary { padding: .55rem .75rem; font-size: .78rem; white-space: nowrap; }
 .hms-record-controls .hms-secondary[aria-disabled=true] { opacity: .45; cursor: default; }
-.hms-workspace .hms-record-controls select { width: 4.5rem; padding: .5rem; }
+.hms-workspace .hms-record-controls select { width: 5rem; padding: .5rem 2.25rem .5rem .75rem; }
 .hms-workspace .hms-record-controls input[type=number] { width: 4.5rem; padding: .5rem; }
 .hms-section-links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; font-size: .8rem; }
 .hms-section-links > span { color: var(--pyesio-muted); }
@@ -225,6 +228,9 @@ body:has(.hms-record-dialog[open]) { overflow: hidden; }
 .pyesio-auth-mobile-logo { display: none; }
 .dark .pyesio-auth-story { background: #f0f3f8; }
 [x-cloak] { display: none !important; }
+@media(forced-colors: active) {
+    .hms-workspace select:not([multiple]):is(:not([size]), [size="1"]) { appearance: auto; -webkit-appearance: auto; background-image: none; padding-right: .75rem; }
+}
 @media(max-width: 1100px) { .hms-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } .hms-grid.three { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width: 800px) {
     .pyesio-auth-layout { display: block; }
