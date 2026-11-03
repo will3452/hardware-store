@@ -52,4 +52,4 @@ Provider reference: [Hostinger email configuration](https://www.hostinger.com/su
 
 The local suite covers transaction rollback, encrypted payloads, retry/redaction, revocation, suspended stores, valid recovery/verification links, changed recipient addresses, announcement opt-in/audience/withdrawal, lease recovery, context cleanup, admin permissions, and branded HTML/plain text. The production delivery check uses only the mailbox explicitly approved by the operator and a plain test message without account links or store data.
 
-Deployment and the live delivery result are recorded in the latest release notes after verification.
+Production deployment and rollback-only rendering checks passed on November 3, 2026. The one authorized test was accepted by Hostinger SMTP at 13:42:07 Asia/Manila on its first attempt through the automatic scheduler. Its encrypted payload was cleared after acceptance. No existing store was used as a test recipient, and inbox placement was not independently inspected. See the latest [release notes](release-notes.md) for detailed evidence.

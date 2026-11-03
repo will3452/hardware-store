@@ -5,7 +5,11 @@
 - Added **Admin → Email delivery** with status filters, safe failure details, retry controls, and a test button limited to the signed-in administrator. Store management shows invitation delivery state and offers email or private-link recovery.
 - Delivery runs through the existing Hostinger scheduler with bounded SMTP timeouts, automatic retries, lease recovery, encrypted payload cleanup, and tenant-context cleanup. Logging transports are never reported as successful SMTP delivery.
 - Added an additive migration for delivery records and announcement opt-in. No merchant data seeding or existing account resets are needed.
-- Validation: **104 tests / 624 assertions** against MySQL, PHPStan, Pint, production build, and Blade compilation. SMTP TLS authentication succeeded on Hostinger before deployment. Live message acceptance is verified separately; see [SMTP email](smtp-email.md).
+- Validation: **104 tests / 624 assertions** against MySQL, PHPStan, Pint, production build, and Blade compilation. SMTP TLS authentication succeeded on Hostinger before deployment. Production release `ec4d14f` was installed in the private checkout, with the additive migration and private SMTP settings. The unchanged public asset manifest matched the verified local build. Rollback-only production checks passed for invitation creation, encryption, eligibility, mail rendering, and the admin delivery screen; all synthetic rows were rolled back.
+- Live delivery: the one explicitly approved test was accepted by SMTP on its first attempt at **2026-11-03 13:42:07 Asia/Manila / 05:42:07 UTC**, following the automatic scheduler heartbeat at 13:42:01. No manual drain was used; the test payload was then removed from the outbox. Inbox placement was not independently inspected.
+- HTTPS home/login/recovery/health/assets checks passed; the admin email page requires sign-in, public registration is absent, and environment/Git/source paths remain blocked. SMTP uses implicit TLS on port 465 with certificate validation and required TLS. All non-mail environment settings were preserved. Temporary credential-transfer files were removed after verification.
+- Before deployment, private on-server snapshot `20261103-053733-220378` was created. The previous source and environment remain in the private deployment backup directory. No production database or environment was downloaded.
+
 
 # Pyesio branding — November 2, 2026
 

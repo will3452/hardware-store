@@ -1,4 +1,4 @@
-# First-release completion status — November 2, 2026
+# First-release completion status — November 3, 2026
 
 ## Agreed scope
 
@@ -17,7 +17,7 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 ## Validation evidence
 
-- `composer test`: **88 tests, 545 assertions**, including PHPStan and Pint; MySQL integration and separate-process concurrency tests pass.
+- `composer test`: **104 tests, 624 assertions**, including PHPStan and Pint; MySQL integration and separate-process concurrency tests pass.
 - `npm run build`: production assets built successfully without a production Node process.
 - Browser walkthrough with local synthetic data: scan item, cash/e-wallet split totaling PHP 300 against PHP 285, PHP 15 change, committed record; create a purchase draft and edit quantity without changing stock; cash-session reconciliation and 360px cash and checkout layouts.
 - Local restore rehearsal: compressed development database imported into a separate recovery database. Restored 1 synthetic store, 4 products, 6 documents, and 11 audit events. Stock/cash discrepancies and orphaned document/attachment/membership relationships: **zero**. Private archive extracted; matching local environment retained. This small fixture is not a production-size or per-store selective recovery drill.
@@ -26,6 +26,8 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 - HTTPS checks: home/login/health/assets return 200; protected portals redirect to login; public registration is absent; environment/Git/source/log paths are blocked. Production environment and existing records were preserved.
 - Fresh production snapshot `20261102-031234-c877d0` passed on-server database/private-file/environment checksums and archive-readability verification. Production debug is off and failed jobs count is zero.
 - Automatic scheduler execution confirmed: hPanel invoked the private `scheduler.sh` wrapper at **2026-11-02 03:17:01 UTC / 11:17:01 Asia/Manila**. The heartbeat and bounded queue task completed successfully; no manual scheduler execution was used as this evidence. Daily backup is scheduled for 02:00 Asia/Manila.
+
+- SMTP extension deployed November 3: invitations, account recovery/verification/security notices, optional announcement emails, and administrator delivery tracking. An explicitly approved test was automatically accepted by Hostinger SMTP at 13:42:07 Asia/Manila on its first attempt. Inbox placement was not independently inspected. See [SMTP email](smtp-email.md).
 
 ## Boundaries for daily use
 
