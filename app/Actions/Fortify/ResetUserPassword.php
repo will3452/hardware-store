@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Models\User;
+use App\Services\EmailOutbox;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -24,11 +25,14 @@ class ResetUserPassword implements ResetsUserPasswords
             'password' => $this->passwordRules(),
         ])->validate();
 
-        $user->forceFill([
-            'password' => $input['password'],
-            'remember_token' => Str::random(60),
-        ])->save();
+        DB::transaction(function () use ($user, $input): void {
+            $user->forceFill([
+                'password' => $input['password'],
+                'remember_token' => Str::random(60),
+            ])->save();
 
-        DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            app(EmailOutbox::class)->securityNotice($user, 'Your Pyesio account password was reset. Existing signed-in sessions have been closed.');
+        });
     }
 }

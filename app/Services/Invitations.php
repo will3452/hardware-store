@@ -39,7 +39,10 @@ final class Invitations
         $invite = StoreInvitation::create(['store_id' => $store->id, 'user_id' => $user->id, 'token_hash' => hash('sha256', $token), 'new_identity' => $new, 'expires_at' => now()->addHours(72)]);
         StoreAccess::audit($admin, $store->id, 'owner.invited', $invite->id, ['email' => $email]);
 
-        return route('invitation.show', $token);
+        $url = route('invitation.show', $token);
+        app(EmailOutbox::class)->invitation($invite, $store, $user, $url);
+
+        return $url;
     }
 
     public function find(string $token): StoreInvitation

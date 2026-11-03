@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\EmailOutbox;
 use App\Support\Tenancy\StoreContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
+use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
 
         if ($publicPath = config('app.public_path')) {
             $this->app->usePublicPath($publicPath);
+        }
+
+        foreach ([TwoFactorAuthenticationConfirmed::class => 'Two-factor authentication was enabled on your Pyesio account.', TwoFactorAuthenticationDisabled::class => 'Two-factor authentication was disabled on your Pyesio account.'] as $event => $message) {
+            Event::listen($event, fn ($event) => app(EmailOutbox::class)->securityNotice($event->user, $message));
         }
 
         foreach ([TwoFactorAuthenticationConfirmed::class, ValidTwoFactorAuthenticationCodeProvided::class] as $event) {

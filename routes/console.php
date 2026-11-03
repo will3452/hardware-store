@@ -12,3 +12,5 @@ Schedule::command('queue:work --stop-when-empty --max-time=45 --timeout=30 --tri
     ->name('database-queue-drain');
 
 Schedule::command('app:backup')->dailyAt('02:00')->timezone('Asia/Manila')->withoutOverlapping(60);
+
+Schedule::command('app:mail-drain --limit=10 --max-time=35')->everyMinute()->withoutOverlapping(5)->name('email-outbox-drain');

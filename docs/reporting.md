@@ -1,6 +1,6 @@
 # Hardware Store Reporting and Financial Rules
 
-Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing and automated email delivery are not part of the current pilot.
+Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing remains outside the current pilot. SMTP account and optional announcement email are implemented as described in [SMTP email](smtp-email.md).
 
 Both portals use the definitions in this specification. Store reports select one authorized Store. Platform reports select an explicitly authorized set of stores. The same interval, currency, filters, and as-of time must produce the same result.
 

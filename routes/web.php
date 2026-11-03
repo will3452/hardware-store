@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CashReportController;
+use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PortalController;
@@ -19,13 +20,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('stores', [AdminController::class, 'create'])->name('stores.create');
         Route::get('stores/{store}', [AdminController::class, 'show'])->name('stores.show');
         Route::post('stores/{store}', [AdminController::class, 'update'])->name('stores.update');
-        Route::post('stores/{store}/recovery', [AdminController::class, 'recovery'])->name('stores.recovery');
-        Route::post('stores/{store}/invitation', [AdminController::class, 'invite'])->name('stores.invite');
+        Route::post('stores/{store}/recovery', [AdminController::class, 'recovery'])->middleware('throttle:5,1')->name('stores.recovery');
+        Route::post('stores/{store}/invitation', [AdminController::class, 'invite'])->middleware('throttle:5,1')->name('stores.invite');
         Route::post('stores/{store}/modules', [AdminController::class, 'modules'])->name('stores.modules');
         Route::get('announcements', [AdminController::class, 'announcements'])->name('announcements');
         Route::post('announcements', [AdminController::class, 'announcement'])->name('announcements.create');
         Route::post('announcements/{announcement}', [AdminController::class, 'announcementStatus'])->name('announcements.status');
         Route::get('audit', [AdminController::class, 'audit'])->name('audit');
+        Route::get('email', [EmailController::class, 'index'])->name('email');
+        Route::post('email/test', [EmailController::class, 'test'])->middleware('throttle:3,10')->name('email.test');
+        Route::post('email/{delivery}/retry', [EmailController::class, 'retry'])->middleware('throttle:10,1')->name('email.retry');
         Route::get('health', [AdminController::class, 'health'])->name('health');
     });
     Route::get('store', [PortalController::class, 'stores'])->name('store.index');

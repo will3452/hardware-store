@@ -31,13 +31,19 @@ new #[Title('Profile settings')] class extends Component {
 
         $validated = $this->validate(ProfileRules::forUser($user));
 
-        $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user, $validated): void {
+            $previousEmail = $user->email;
+            $user->fill($validated);
+            $emailChanged = $user->isDirty('email');
+            if ($emailChanged) {
+                $user->email_verified_at = null;
+            }
+            $user->save();
+            if ($emailChanged) {
+                app(\App\Services\EmailOutbox::class)->securityNotice($user, 'The email address on your Pyesio account was changed.', $previousEmail);
+                $user->sendEmailVerificationNotification();
+            }
+        });
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
@@ -92,7 +98,7 @@ new #[Title('Profile settings')] class extends Component {
 
                         @if (session('status') === 'verification-link-sent')
                             <flux:text class="mt-2 font-medium !dark:text-green-400 !text-green-600">
-                                {{ __('A new verification link has been sent to your email address.') }}
+                                {{ __('A verification email is queued. Please allow a few minutes and check your spam folder.') }}
                             </flux:text>
                         @endif
                     </div>

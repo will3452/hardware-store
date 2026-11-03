@@ -8,7 +8,7 @@ The operational pilot now implements M0–M5 business flows: admin store/owner p
 
 The November 2 completion pass adds supplier maintenance, draft amendment, checkout method configuration, simpler payments, history filters, cash-session exports, a monitored scheduler, and backup verification. See [completion status](completion-status.md) for evidence.
 
-M6 remains a broader operational readiness program. A local synthetic-data restore rehearsal passed; this does not establish production recovery targets or a per-store extraction drill. Functional integration and concurrency tests, real Hostinger deployment checks, and browser walkthroughs provide release evidence. The original 12-month load profile, disaster-recovery targets, off-site copy, fiscal policy, and per-store extraction drill must not be reported as completed without separate evidence. Manual activation/recovery links are the current delivery channel while SMTP is unset.
+M6 remains a broader operational readiness program. A local synthetic-data restore rehearsal passed; this does not establish production recovery targets or a per-store extraction drill. Functional integration and concurrency tests, real Hostinger deployment checks, and browser walkthroughs provide release evidence. The original 12-month load profile, disaster-recovery targets, off-site copy, fiscal policy, and per-store extraction drill must not be reported as completed without separate evidence. SMTP delivery now uses the transactional outbox described in [SMTP email](smtp-email.md); manual activation/recovery links remain a fallback.
 
 ## Delivery milestones
 

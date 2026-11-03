@@ -31,7 +31,7 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 - Noncash payments are recorded only after the owner confirms them externally; the app does not charge a payment provider.
 - Printed documents are internal records. Tax separation, registered invoice numbering, and fiscal certification are not implemented. Profit is a management estimate.
-- Activation and recovery links are shared privately by the administrator. SMTP and an automated notification outbox are not configured.
+- SMTP account email, optional announcement email, delivery history, and retries are implemented. Private links remain a fallback; [SMTP email](smtp-email.md) describes delivery guarantees and limits.
 - Backups are private on the hosting account. An independent off-site destination, retention policy, production-size timed restore, per-store extraction, and 12-month load benchmark remain operational follow-ups. On-server checksum verification does not prove a full disaster recovery target.
 - Owners must review their real opening quantities/costs and starting cash. No synthetic seed data is deployed.
 - Staff roles, customer credit, quotations, delivery management, offline selling, multiple branches, and provider payment integration are later increments.

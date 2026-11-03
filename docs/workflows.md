@@ -1,6 +1,6 @@
 # Hardware Store Workflows and Screens
 
-Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing and automated email delivery are not part of the current pilot.
+Implementation status: the October 31 operational pilot is described in [release notes](release-notes.md) and [the user guide](user-guide.md). This specification retains the broader target contract; tax/fiscal processing remains outside the current pilot. SMTP account and optional announcement email are implemented as described in [SMTP email](smtp-email.md).
 
 The screens below implement the first-release PRD. Keep product language consistent: Store, Store Owner, Platform Admin, Admin Portal, and Store Portal. The system is online; a locally retained draft is not a posted transaction.
 

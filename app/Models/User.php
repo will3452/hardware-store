@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\PasswordReset;
+use App\Notifications\VerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
@@ -69,9 +72,21 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
+    public function sendPasswordResetNotification($token): void
+    {
+        if ($this->status === 'active') {
+            $this->notify(new PasswordReset($token));
+        }
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        if ($this->status === 'active' && ! $this->hasVerifiedEmail()) {
+            RateLimiter::attempt('verification-email:'.$this->id.':'.hash('sha256', $this->email), 1, fn () => $this->notify(new VerifyEmail), 60);
+        }
+    }
+
+    /** Get the user's initials. */
     public function initials(): string
     {
         $initials = Str::initials($this->name, true);

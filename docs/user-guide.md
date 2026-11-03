@@ -1,6 +1,6 @@
 # Using Hardware Store Management
 
-This release supports online daily operations for independent stores. Open [the live app](https://wgalas.lzrk.io/login) and use your existing account. Store activation and recovery links are shared privately by the Platform Admin until an email transport is configured.
+This release supports online daily operations for independent stores. Open [the live app](https://wgalas.lzrk.io/login) and use your existing account. Store activation and recovery emails are queued for SMTP delivery. Allow a few minutes and check spam; the Platform Admin can also share links privately.
 
 ## Start as the Platform Admin
 
@@ -71,3 +71,12 @@ Platform administrators with store-management access can open **System status** 
 Store owners can ask the Platform Admin for a new activation link or a 60-minute owner recovery link after identity verification. Existing account passwords remain unchanged during store invitations. Password recovery invalidates database sessions. Platform administrator recovery is intentionally not exposed through merchant recovery controls; retain TOTP recovery codes and use configured email or the operator's verified administrative procedure.
 
 The platform administrator can view merchant reports. Additional staff roles, customer credit, offline selling, quotations, deliveries, multi-location businesses, provider payment integrations, and statutory accounting are outside this release.
+
+
+## Email delivery
+
+Registering a store or creating an owner invitation queues an activation email. **Forgot password** queues a recovery email without revealing account existence. **Manage store → Owner password recovery** offers email delivery or a private-link fallback after identity verification. Changing your login email requires verification of the new address and notifies the previous address.
+
+Admins can open **Email delivery** to review pending, sending, sent, failed, or cancelled messages. Sent means accepted by the mail server. Automatic retries run in the background; an eligible failed delivery can be retried without creating a new account link. Expired links require a new invitation or recovery request. **Send test to my email** sends only to your signed-in account address.
+
+Announcements stay in the portal unless **Also email active store owners when published** is selected. Email recipients are current active owners when the scheduler first processes publication. Withdrawing prevents unsent messages. See [SMTP email](smtp-email.md) for timing and recovery details.

@@ -11,7 +11,7 @@ class RecoveryLinkResponse implements FailedPasswordResetLinkRequestResponse, Su
 {
     public function toResponse($request): JsonResponse|RedirectResponse
     {
-        $message = 'If this email has an eligible account, a password reset link has been sent. Check your inbox or contact your platform administrator.';
+        $message = 'If this email has an eligible account, a password reset email is queued. Allow a few minutes, check your inbox and spam folder, or contact your platform administrator.';
 
         return $request->wantsJson() ? response()->json(['message' => $message]) : back()->with('status', $message);
     }

@@ -1,3 +1,12 @@
+# SMTP account and announcement email — November 3, 2026
+
+- Added a durable encrypted email outbox for owner invitations, password recovery, email verification, profile email changes, and password/two-factor security notices. Branded HTML and plain-text messages share the Pyesio style.
+- Added optional owner email on announcement publication, with a current-audience snapshot, explicit opt-in, and eligibility checks before sending. Existing announcements and historical invitations are not emailed automatically.
+- Added **Admin → Email delivery** with status filters, safe failure details, retry controls, and a test button limited to the signed-in administrator. Store management shows invitation delivery state and offers email or private-link recovery.
+- Delivery runs through the existing Hostinger scheduler with bounded SMTP timeouts, automatic retries, lease recovery, encrypted payload cleanup, and tenant-context cleanup. Logging transports are never reported as successful SMTP delivery.
+- Added an additive migration for delivery records and announcement opt-in. No merchant data seeding or existing account resets are needed.
+- Validation: **104 tests / 624 assertions** against MySQL, PHPStan, Pint, production build, and Blade compilation. SMTP TLS authentication succeeded on Hostinger before deployment. Live message acceptance is verified separately; see [SMTP email](smtp-email.md).
+
 # Pyesio branding — November 2, 2026
 
 - Applied the supplied Pyesio icon, logo, and tagline to application navigation, sign-in/recovery/activation screens, page titles, favicon, and touch icon.

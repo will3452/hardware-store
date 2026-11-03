@@ -59,9 +59,10 @@ new #[Title('Security settings')] class extends Component {
             throw $e;
         }
 
-        Auth::user()->update([
-            'password' => $validated['password'],
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated): void {
+            Auth::user()->update(['password' => $validated['password']]);
+            app(\App\Services\EmailOutbox::class)->securityNotice(Auth::user(), 'Your Pyesio account password was changed.');
+        });
 
         $this->reset('current_password', 'password', 'password_confirmation');
 
