@@ -6,6 +6,9 @@
 - Omitted mutation forms and enforced read-only access at the route, middleware, service, and tenant-model boundaries. Suspended/archived stores and disabled modules remain inspectable without enabling owner operations.
 - Recorded `platform.store_viewed` for each successful access under the administrator's real identity. Cross-store resource mismatches are rejected and context is cleared after success/failure.
 - Validation: **115 tests / 853 assertions**, including 11 administrator-view integration tests; PHPStan, Pint, Blade compilation, and production build pass. The synthetic-data browser preview confirms the banner, read-only product details, and administrator navigation.
+- Production release `bc713b9` was deployed to the private Hostinger checkout. The permission migration enabled the existing full administrator. Thirteen production screens, access audit attribution, hidden mutation forms, the write guard, and context cleanup passed using synthetic rows inside a rolled-back transaction. SMTP and all other environment settings were byte-for-byte preserved; the public asset manifest matched the verified build.
+- Pre-deployment on-server snapshot: `20261103-133635-b1c4ee`. Previous source/environment remain in the private deployment backup directory. No production data or credentials were downloaded. Live health/assets and unauthenticated route/source protection checks passed.
+
 
 # SMTP account and announcement email — November 3, 2026
 

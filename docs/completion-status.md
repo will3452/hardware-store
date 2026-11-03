@@ -29,7 +29,7 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 - SMTP extension deployed November 3: invitations, account recovery/verification/security notices, optional announcement emails, and administrator delivery tracking. An explicitly approved test was automatically accepted by Hostinger SMTP at 13:42:07 Asia/Manila on its first attempt. Inbox placement was not independently inspected. See [SMTP email](smtp-email.md).
 
-- Administrator store viewing adds an explicit read-only workspace with per-request MFA/permission checks, scoped record access, separate export permission, and access audit events. Existing full admins receive the view permission; limited roles do not.
+- Administrator store viewing adds an explicit read-only workspace with per-request MFA/permission checks, scoped record access, separate export permission, and access audit events. Existing full admins receive the view permission; limited roles do not. Production release `bc713b9` passed 13 rollback-only synthetic screen checks and enabled the existing full administrator. Environment settings, including SMTP, were preserved.
 
 ## Boundaries for daily use
 
