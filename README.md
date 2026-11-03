@@ -4,7 +4,7 @@ Hardware business, made simple. See [branding](docs/branding.md) for the supplie
 
 An online system for independent hardware store businesses. A Platform Admin registers stores, controls their enabled modules, publishes announcements, and reviews centralized performance reports. Each store operates through its own Store Portal and starts with one Store Owner account.
 
-Status: online operational pilot, version 0.3. Updated on October 31, 2026, using Asia/Manila dates. Laravel and MySQL are the chosen application stack; deployment targets Hostinger Web or Cloud hosting through hPanel.
+Status: online operational pilot, version 0.3. Updated on November 4, 2026, using Asia/Manila dates. Laravel and MySQL are the chosen application stack; deployment targets Hostinger Web or Cloud hosting through hPanel.
 
 ## Build documentation
 
@@ -102,7 +102,7 @@ Confirmed requirements include independent store owners, online operation for th
 
 The proposed first release covers products, inventory, purchasing, paid sales, returns, cash sessions, paid operating expenses, and reports. Customer credit, quotations, delivery management, and additional staff accounts are later increments. The domain model allows these additions without making them part of the first release.
 
-On November 3, the product owner selected hardware product templates, customer credit/collections, and quotations with partial pickup/delivery as the next three priorities. The approved [hardware growth plan](docs/hardware-growth-plan.md) is implemented as the next release candidate; see [release notes](docs/release-notes.md) for deployment evidence. Existing stores retain their data and opt into Customers, Credit, and Orders through admin module access. Subscription/signup policies remain separate.
+On November 3, the product owner selected hardware product templates, customer credit/collections, and quotations with partial pickup/delivery as the next three priorities. The approved [hardware growth plan](docs/hardware-growth-plan.md) was deployed on November 4; see [release notes](docs/release-notes.md) for deployment evidence. Existing stores retain their data and opt into Customers, Credit, and Orders through admin module access. Subscription/signup policies remain separate.
 
 Implementation defaults are explicitly marked in the decision register. Currency, fiscal document requirements, the exact Hostinger plan and deployment layout, email delivery, and backup policy need resolution at the gates listed there. Production fiscal use depends on a jurisdiction-specific review; the documentation does not assert tax certification.
 

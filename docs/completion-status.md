@@ -1,6 +1,6 @@
 # First-release completion status — November 3, 2026
 
-The November 4 hardware extension is tracked in [release notes](release-notes.md). It adds guided products, optional customer credit, and quotations/partial releases while preserving existing businesses. The historical evidence below remains the original pilot baseline.
+The November 4 hardware extension is deployed; verification is tracked in [release notes](release-notes.md). It adds guided products, optional customer credit, and quotations/partial releases while preserving existing businesses. The historical evidence below remains the original pilot baseline.
 
 ## Agreed scope
 

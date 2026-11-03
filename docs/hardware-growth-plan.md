@@ -2,7 +2,7 @@
 
 Planning date: November 3, 2026, Asia/Manila.
 
-Status: the product owner approved the detailed flow and required compatibility with existing production users. H1–H3 are implemented as a release candidate on November 4. Production installation and verification are tracked in the release notes. Existing stores must explicitly enable the new customer, credit, and order modules.
+Status: the product owner approved the detailed flow and required compatibility with existing production users. H1–H3 were deployed and verified on November 4. Production evidence is recorded in the release notes. Existing stores must explicitly enable the new customer, credit, and order modules.
 
 ## Outcome and delivery order
 

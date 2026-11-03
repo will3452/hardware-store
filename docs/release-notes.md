@@ -1,6 +1,6 @@
 # Hardware templates, customer credit, and orders — November 4, 2026
 
-Deployment status: release candidate; production installation pending. The owner approved these flows with an explicit requirement to preserve existing users and update affected workflows.
+Deployment status: **deployed and verified** on November 4, 2026 (Asia/Manila), application commit `acdd929`. The owner approved these flows with an explicit requirement to preserve existing users and update affected workflows.
 
 - Guided wire, pipe/fitting, fastener, steel/lumber and paint registration with structured specifications, generated names/SKUs, store-local suggestions, existing/archived product lookup, duplicate checks and atomic pack conversion. General products and existing custom units remain supported.
 - Customer accounts with reviewed credit limits/terms, explicit partially/unpaid checkout, opening receivables, payment allocations, statements/CSV and eligible reversals. Returns reduce original unpaid debt before refunding money actually received.
@@ -10,6 +10,11 @@ Deployment status: release candidate; production installation pending. The owner
 - Validation: **144 tests / 1,232 assertions**, Pint and PHPStan pass. Includes separate-process credit-limit/collection/release races, legacy-schema upgrade with unchanged protected values and report totals, original posting retries, cross-store/admin isolation, actual roll-to-meter receiving/sales, and exact partial-release discount rounding.
 - Browser walkthrough with a local synthetic store: guided wire/pack save; PHP 5,000 sale with PHP 2,000 received and subsequent PHP 1,000 allocation; quote/accept/40-of-100-bag dispatch with PHP 10,000 payment and 60 bags remaining. Desktop and 390px mobile layout checked, no page overflow or browser errors; the existing-product check finds the previously created item. No production records were used for UI tests.
 - Boundaries: online-only, one operational owner, internal management records; no deposits/prepayment, stock reservations, automatic customer messages, interest/penalties, provider charging or fiscal certification. Existing operational backup/recovery follow-ups remain separate.
+
+- Production backup `20261103-162712-13ac20` was created and checksum-verified on the server before the three additive migrations. The snapshot ID uses UTC. Existing values in 19 protected tables, prior report totals, and the complete `.env` matched their pre-migration baseline exactly. No production database or credentials were downloaded. New customer, receivable, and order tables remained empty after verification; all existing stores retained disabled new module flags.
+- On-server runtime checks passed for guided products/conversions, credit sale/retry, collection, debt-first return/refund, accepted quotation, partial dispatch/retry, receipt confirmation, stock/report reconciliation, and 11 rendered owner/admin screens. Synthetic rows were contained in one transaction and rolled back; no email was sent.
+- Live HTTPS checks passed: health/login 200, unauthenticated admin redirect, environment 403 and private source 404. Published CSS/JavaScript matched the local build byte-for-byte; the live login references the new manifest and renders without browser console errors. Server-only `bun.lock` is retained.
+- Deployment recovery: the first attempt stopped before migrations because the host had a stale cached development provider. Prior code was restored, generated package caches rebuilt, and login/health verified before retrying. Public compiled asset permissions were normalized to directories 755/files 644 after upload. These runtime repairs did not change application dependencies, existing records, or environment settings.
 
 See [the user guide](user-guide.md#hardware-workflows--november-4-extension) and [approved growth plan](hardware-growth-plan.md).
 
