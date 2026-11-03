@@ -4,6 +4,8 @@ Implementation status: the October 31 operational pilot is described in [release
 
 Version 0.2. Planning baseline updated October 31, 2026. Product decision owner: the system owner. Intended readers: product, design, engineering, and QA.
 
+November 3 extension: hardware product templates, customer credit/collections, and quotations with partial pickup/delivery are the selected next priorities. The approved extension requirements and acceptance criteria are in the [hardware growth plan](hardware-growth-plan.md). H1–H3 are implemented as the November 4 release candidate; consult [release notes](release-notes.md) for deployment status. The original first-release scope below is retained as the legacy baseline. Customer credit, independent collections, quotations, and releases extend it only for stores with the corresponding modules enabled.
+
 Independent hardware stores need to record their daily operations and understand their performance. The platform operator needs to onboard those stores, control their available modules, communicate announcements, and see centralized reports. The first release will provide two portals over a common platform, with one initial owner account per store and online operation.
 
 The application will use Laravel and target Hostinger Web or Cloud hosting through hPanel. The implementation baseline is Laravel 13, MySQL with InnoDB, Laravel session authentication, and short cron-driven background processing. The proposed interface uses the official Livewire starter kit. These hosting constraints do not change the required store isolation, atomic posting, or reconciliation behavior.

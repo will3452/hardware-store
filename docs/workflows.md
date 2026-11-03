@@ -166,3 +166,15 @@ Use separate labels for Net Sales, Collections, Gross Profit, Paid Operating Exp
 | Uncertain posting | Retain submission ID and recover outcome before a new attempt |
 
 Use visible labels, keyboard navigation, readable contrast, and clear status text. Financial amounts include currency; quantity fields include their unit. A printed document retains the posted snapshots rather than showing a later product rename or current price.
+
+
+## Hardware growth workflows — November 4 extension
+
+The approved [hardware growth plan](hardware-growth-plan.md) extends the original first-release boundary. See the [user guide](user-guide.md#hardware-workflows--november-4-extension) for the implemented steps.
+
+- Products add optional guided specification families, a deliberate existing-product check, and atomic fixed pack conversion; general products and old forms remain supported.
+- Customers adds searchable/paginated accounts, reviewed limits/terms, outstanding records, opening debts, allocation-based collections, dated statements and exports. Checkout supports explicit customer credit; returns distinguish debt reduction from refunds.
+- Quotes & orders adds draft → issued → accepted → partial/completed, with close/cancel for remaining items. An issued/accepted revision creates a linked replacement draft and closes the old unfulfilled remainder. Pickup/dispatch creates one sale; receipt confirmation only records status. Returned goods use the linked sale's return workflow.
+- Admin module controls and read-only viewing include the new workflows. Store/platform metrics, cash reconciliation, document details, exports and onboarding wording use the extended sales/payment distinction.
+
+Existing stores start with the three new modules disabled. No new module alters login or requires existing users to recreate products, stock, sales, or accounts.

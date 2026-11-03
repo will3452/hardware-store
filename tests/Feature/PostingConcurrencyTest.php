@@ -4,13 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\BusinessDocument;
 use App\Models\CashSession;
+use App\Models\Customer;
 use App\Models\DocumentLine;
 use App\Models\Product;
 use App\Models\ProductUnit;
+use App\Models\SalesOrderLine;
 use App\Models\Store;
 use App\Models\StoreModule;
 use App\Models\User;
+use App\Services\CreditAccounts;
 use App\Services\Operations;
+use App\Services\SalesOrders;
 use App\Services\StoreAccess;
 use App\Support\Tenancy\StoreContext;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -54,6 +58,49 @@ class PostingConcurrencyTest extends TestCase
         $this->assertSame(1, BusinessDocument::where('kind', 'return')->count());
         $this->assertDatabaseHas('products', ['id' => $product->id, 'quantity_micro' => 2000000]);
         $this->assertDatabaseHas('cash_sessions', ['id' => $session->id, 'expected_minor' => 10000]);
+    }
+
+    public function test_parallel_credit_sales_cannot_exceed_customer_limit(): void
+    {
+        [$store, $user, $product, $unit, $session] = $this->fixture();
+        $customer = Customer::create(['name' => 'Credit fixture', 'credit_enabled' => true, 'credit_limit_minor' => 1000]);
+        $data = ['request_key' => (string) Str::uuid(), 'cash_session_id' => $session->id, 'customer_id' => $customer->id, 'settlement' => 'credit', 'due_date' => now()->addMonth()->toDateString(), 'lines' => [['product_id' => $product->id, 'unit_id' => $unit->id, 'quantity' => '1', 'price' => '10', 'discount' => '0', 'discount_type' => 'amount']], 'payments' => [['method' => 'cash', 'amount' => '0']]];
+        $results = $this->parallel($store, $user, 'sale', [$data, array_replace($data, ['request_key' => (string) Str::uuid()])]);
+        $this->assertSame(['posted', 'rejected'], collect($results)->pluck('result')->sort()->values()->all());
+        $this->assertSame(1000, app(CreditAccounts::class)->balance($customer->id));
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'quantity_micro' => 1000000]);
+    }
+
+    public function test_parallel_collections_cannot_settle_the_same_debt_twice(): void
+    {
+        [$store, $user, $product, $unit, $session] = $this->fixture();
+        $customer = Customer::create(['name' => 'Collection fixture']);
+        $opening = app(Operations::class)->post($user, 'opening_receivable', ['request_key' => (string) Str::uuid(), 'customer_id' => $customer->id, 'amount' => '10', 'due_date' => now()->toDateString(), 'original_date' => now()->subMonth()->toDateString(), 'reference' => 'Old record', 'notes' => 'Reviewed']);
+        $data = ['request_key' => (string) Str::uuid(), 'cash_session_id' => $session->id, 'customer_id' => $customer->id, 'amount' => '10', 'allocations' => [['obligation_id' => $opening->id, 'amount' => '10']], 'method' => 'cash'];
+        $results = $this->parallel($store, $user, 'collection', [$data, array_replace($data, ['request_key' => (string) Str::uuid()])]);
+        $this->assertSame(['posted', 'rejected'], collect($results)->pluck('result')->sort()->values()->all());
+        $this->assertSame(0, app(CreditAccounts::class)->balance($customer->id));
+        $this->assertDatabaseHas('cash_sessions', ['id' => $session->id, 'expected_minor' => 11000]);
+    }
+
+    public function test_parallel_order_release_and_retries_post_once(): void
+    {
+        [$store, $user, $product, $unit, $session] = $this->fixture();
+        $customer = Customer::create(['name' => 'Order fixture']);
+        $orders = app(SalesOrders::class);
+        $order = $orders->act($user, 'save', null, ['request_key' => (string) Str::uuid(), 'customer_id' => $customer->id, 'valid_until' => now()->addWeek()->toDateString(), 'lines' => [['product_id' => $product->id, 'unit_id' => $unit->id, 'quantity' => '1', 'price' => '10', 'discount' => '0', 'discount_type' => 'amount']]]);
+        $order = $orders->act($user, 'issue', $order->id, ['request_key' => (string) Str::uuid(), 'revision' => $order->revision]);
+        $order = $orders->act($user, 'accept', $order->id, ['request_key' => (string) Str::uuid(), 'revision' => $order->revision, 'notes' => 'Accepted']);
+        $line = SalesOrderLine::where('sales_order_id', $order->id)->firstOrFail();
+        $data = ['order_id' => $order->id, 'request_key' => (string) Str::uuid(), 'revision' => $order->revision, 'cash_session_id' => $session->id, 'lines' => [['order_line_id' => $line->id, 'quantity' => '1']], 'payments' => [['method' => 'cash', 'amount' => '10']], 'settlement' => 'paid', 'method' => 'pickup', 'recipient' => 'Customer'];
+        $results = $this->parallel($store, $user, 'order_release', [$data, $data]);
+        $this->assertSame(['posted', 'posted'], collect($results)->pluck('result')->all());
+        $this->assertSame($results[0]['id'], $results[1]['id']);
+        $this->assertDatabaseCount('order_releases', 1);
+        $this->assertSame(1, BusinessDocument::where('kind', 'sale')->count());
+        $results = $this->parallel($store, $user, 'order_release', [array_replace($data, ['request_key' => (string) Str::uuid()]), array_replace($data, ['request_key' => (string) Str::uuid()])]);
+        $this->assertSame(['rejected', 'rejected'], collect($results)->pluck('result')->all());
+        $this->assertDatabaseHas('sales_order_lines', ['id' => $line->id, 'released_micro' => 1000000]);
     }
 
     private function fixture(): array

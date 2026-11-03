@@ -29,7 +29,7 @@ class ViewStoreAsAdministrator
             $this->context->set($store, readOnly: true);
             $response = $next($request);
             if ($response->isSuccessful()) {
-                $resource = $request->route('document') ?? $request->route('order') ?? $request->route('cashSession') ?? $request->route('attachment');
+                $resource = $request->route('customer') ?? $request->route('salesOrder') ?? $request->route('document') ?? $request->route('order') ?? $request->route('cashSession') ?? $request->route('attachment');
                 StoreAccess::audit($request->user(), $store->id, 'platform.store_viewed', $resource ?? $store->id, [
                     'route' => $request->route()?->getName(),
                     'page' => $request->route('page', 'overview'),

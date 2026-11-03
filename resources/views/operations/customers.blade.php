@@ -1,0 +1,8 @@
+<x-store-screen :store="$store" :page="$page" :modules="$modules">
+<div><h2>Customers</h2><p>Customer accounts, credit terms, payments, and statements.</p></div>
+@if(!$readOnly && ($modules['customers'] ?? null) === 'enabled')
+<details class="hms-card" @if($errors->any()) open @endif><summary>Add customer</summary><form method="POST" action="{{ route('store.customers.save', $store->id) }}" class="space-y-4 mt-4">@csrf<x-customer-fields :credit-available="($modules['credit'] ?? null) === 'enabled'"/><button class="hms-primary">Save customer</button></form></details>
+@endif
+<form method="GET" class="hms-search"><input name="q" value="{{ request('q') }}" placeholder="Search customer or contact" aria-label="Search customers"><button class="hms-secondary">Search</button></form>
+<x-record-list :records="$customers" id="customers" label="Customers"><div class="hms-table-wrap" tabindex="0" role="region" aria-label="Customer records"><table><thead><tr><th>Customer</th><th>Contact</th><th>Status</th><th>Credit</th><th>Actions</th></tr></thead><tbody>@forelse($customers as $customer)<tr><td>{{ $customer->name }}</td><td>{{ $customer->contact ?: '—' }}</td><td>{{ $customer->active ? 'Active' : 'Archived' }}</td><td>{{ $customer->credit_enabled ? $store->currency.' '.number_format($customer->credit_limit_minor / 100, 2).' limit' : 'Paid purchases only' }}</td><td><a class="hms-secondary" href="{{ App\Support\StoreWorkspace::route('store.customer', [$store->id, $customer->id]) }}">View account</a></td></tr>@empty<tr><td colspan="5">No matching customers.</td></tr>@endforelse</tbody></table></div></x-record-list>
+</x-store-screen>

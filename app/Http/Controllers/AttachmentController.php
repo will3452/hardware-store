@@ -25,7 +25,7 @@ class AttachmentController extends Controller
                 $store = $access->lock($request->user());
                 $doc = BusinessDocument::findOrFail($document);
                 $module = match ($doc->kind) {
-                    'expense', 'expense_reversal' => 'expenses', 'receipt', 'receipt_reversal' => 'purchasing', 'sale', 'return' => 'sales', default => 'inventory'
+                    'expense', 'expense_reversal' => 'expenses', 'receipt', 'receipt_reversal' => 'purchasing', 'sale', 'return' => 'sales', 'collection', 'collection_reversal', 'opening_receivable', 'opening_receivable_reversal' => 'credit', default => 'inventory'
                 };
                 $access->module($module, true);
                 StoreAccess::check(DocumentAttachment::where('business_document_id', $doc->id)->count() < 10, 'A document may have at most ten attachments.');

@@ -51,7 +51,17 @@ class ProductCatalog
             $store = $access->lock($user);
             $access->module('catalog');
             $product = ! empty($data['product_id']) ? Product::whereKey($data['product_id'])->firstOrFail() : new Product;
-            $name = Str::squish($data['name']);
+            $template = null;
+            if (! empty($data['template_key'])) {
+                $this->check(! $product->exists || $product->template_key === $data['template_key'], 'template_key', 'Keep the existing product type. Create a new product for a different type.');
+                $template = app(ProductTemplates::class)->normalize($data);
+                $data['name'] = $template['name'];
+            } elseif ($product->exists && $product->template_key) {
+                // Older open forms may omit new fields; preserve the stored specifications.
+                $template = ['template_key' => $product->template_key, 'template_version' => $product->template_version, 'specifications' => $product->specifications ?? [], 'name' => $product->name];
+                $data['name'] = $product->name;
+            }
+            $name = Str::squish($data['name'] ?? '');
             $this->check($name !== '', 'name', 'Enter the product name and size or variant.');
             $baseUnit = $data['base_unit'];
             if ($product->exists) {
@@ -63,6 +73,12 @@ class ProductCatalog
             }
             $category = $this->label($data, 'category');
             $brand = $this->label($data, 'brand');
+            if ($template) {
+                $fingerprint = app(ProductTemplates::class)->fingerprint($template['template_key'], $template['specifications'], $brand, $baseUnit);
+                $this->check(! Product::where('template_fingerprint', $fingerprint)->when($product->exists, fn ($q) => $q->whereKeyNot($product->id))->exists(), 'name', 'This product specification, brand, and unit are already registered, possibly archived. Open the existing product.');
+                $product->fill($template + ['template_fingerprint' => $fingerprint]);
+                $category ??= ProductTemplates::definitions()[$template['template_key']]['category'];
+            }
             $sku = trim($data['sku'] ?? '');
             if ($sku === '') {
                 $this->check(! $product->exists, 'sku', 'Keep the existing SKU or enter a replacement.');
@@ -87,6 +103,13 @@ class ProductCatalog
                 'price_minor' => Amounts::parse($data['price']), 'reorder_micro' => $reorder, 'fractional' => $fractional, 'active' => $data['active'] ?? true]);
             $product->save();
             ProductUnit::firstOrCreate(['product_id' => $product->id, 'label' => $product->base_unit], ['factor_micro' => 1000000]);
+            if (! empty($data['pack_label']) || ! empty($data['pack_factor'])) {
+                $this->check(empty($data['product_id']), 'pack_label', 'Add another conversion from the product details.');
+                $label = Str::squish($data['pack_label'] ?? '');
+                $factor = Amounts::parse($data['pack_factor'] ?? '0', 6);
+                $this->check($label !== '' && $label !== $baseUnit && $factor > 0 && ($fractional || $factor % 1000000 === 0), 'pack_factor', 'Enter a different pack label and a positive quantity compatible with the selling unit.');
+                ProductUnit::create(['product_id' => $product->id, 'label' => $label, 'factor_micro' => $factor]);
+            }
             StoreAccess::audit($user, $store->id, 'product.saved', $product->id, ['sku' => $product->sku, 'active' => $product->active]);
 
             return $product;

@@ -105,3 +105,39 @@ Lists start with 10 records. Use **Rows → Apply** for 25 or 50, **Previous / N
 Use the search field for products, stores, suppliers, orders, or transaction history. **Jump to** links take you directly to history and report sections. Open **Details / edit** in Products to work on one record; **Close** or Escape takes you back to the same row. Validation errors reopen that product’s dialog.
 
 Page sizes affect only the displayed rows. Report totals and CSV exports still cover the full selected scope. On the Admin Portal, store search filters the directory; report dates and store scope control totals and exports. Printing a list prints the current page; export CSV for a complete report.
+
+
+## Hardware workflows — November 4 extension
+
+Existing products and fully paid checkout continue to work. No owner needs a replacement account or re-entered stock. The platform admin enables **Customers**, **Credit**, and **Orders** for a store under **Manage → Module access**. New modules start disabled for existing stores. Credit depends on Customers/Sales/Cash; Orders depends on Customers/Catalog, and physical releases additionally require Sales/Inventory/Cash.
+
+### Guided product entry
+
+Under **Products → Add a product**, choose General product or a guided Wire, Pipe/Fitting, Fastener, Steel/Lumber, or Paint type. Enter the relevant specifications and select the actual measurement system. The name is generated from the specifications; the selling unit and price stay visible. **Check existing products** searches current and archived names so a legacy item is not overlooked. Exact duplicate name/brand/unit and guided specifications are also checked at save.
+
+Optional **Pack conversion** records actual contents, for example 1 roll = 100 meters. It is saved atomically with the product and cannot be rewritten later. Opening quantities/costs still belong in Inventory. Save-and-add-another keeps product type, unit, category, and brand while clearing price, codes, and item specifications. Recent store specification values are suggested; another store's values are never used.
+
+### Customers and credit
+
+Create a customer under **Customers**. Leave credit off for paid-only buyers. To allow debt, explicitly set a positive credit limit and default term. A credit limit cannot be lowered below the outstanding balance while credit stays enabled. Archiving a customer prevents new credit/orders but retains collection and history.
+
+At **Point of sale**, choose the customer and **Charge balance to customer**. Review the due date (selecting a customer applies their default term), amount received, and remaining amount. Enter zero received for a wholly unpaid sale. The current open cash session is required at checkout. Credit limits are checked again when posting; overdue accounts show a warning and do not incur automatic fees.
+
+A customer's account shows current outstanding and overdue balances, unpaid records, and a dated statement. **Record collection** allocates a confirmed receipt to one or more unpaid records on the current page. **Suggest oldest due first on this page** helps fill those allocations; the total must equal money actually received. Cash collections require the current drawer; confirmed noncash receipts need a reference. Collections never create a second sale.
+
+Use **Record reviewed opening debt** only for verified balances from before Pyesio. Include the original reference/date, due date, and reason. This creates a receivable but no new sales, profit, stock, or cash. The original date does not backdate Pyesio reports.
+
+A sale return reduces its unpaid debt first and refunds only the excess attributable to money already paid. The posted return separates debt reduction from money refunded. Correct an eligible collection/opening debt with its linked reversal and reason; later active settlement or return activity can block reversal. Closed cash-session history is never rewritten.
+
+Statement filters apply to account entries; the current-balance cards remain current. Printing shows the current page, while **Export complete statement** includes every entry in the selected interval. Account statements and customer data are scoped to the store; administrator inspection is read-only.
+
+### Quotations, pickup, and delivery
+
+1. In **Quotes & orders**, create a draft for a customer with products, agreed prices/discounts, validity date, and optional project/site. Edit drafts freely; they have no financial or stock effects.
+2. **Issue quotation & lock this version**, then record the customer's acceptance reference. Expired quotations require a new revision. Issuing/accepting does not reserve stock.
+3. **Record pickup or delivery** and enter quantities physically leaving the store in the displayed base units. Review the release total, recipient/address, and actual payment or approved customer credit. Confirming posts the sale and stock/cost/payment/receivable effects together.
+4. Each release has a linked sale with its own payments, balance, and returns. The order displays ordered/released/cancelled/remaining quantities. **Completed** means all ordered goods have been released, not that every delivery is received or all debt is paid.
+5. Pickup records receipt immediately. For a delivery, use **Confirm received now** only when receipt is confirmed. It does not post another sale or stock deduction. For a failed delivery, record a return against its linked sale when goods physically return. Fully returned dispatches cannot subsequently be marked received.
+6. Cancel only the unfulfilled remainder with a reason. To change agreed remaining items/prices, **Create revised quotation** closes the old remainder and creates a linked replacement draft. Review, issue, and obtain acceptance again. Existing releases retain their original record and prices.
+
+Stock reservations, pre-release deposits/prepayment, delivery fees, driver accounts, automatic customer messages, and public tracking are not supported in this increment. Do not use manual cash-in or a fabricated sale to simulate a customer deposit. These remain internal management records with no configured fiscal invoice/tax processing.

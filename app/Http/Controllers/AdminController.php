@@ -200,6 +200,9 @@ class AdminController extends Controller
             foreach ($modes as $key => $mode) {
                 if ($mode === 'disabled') {
                     $used = match ($key) {
+                        'customers', 'credit' => DB::table('receivable_entries')->where('store_id', $store)->exists(),
+                        'orders' => DB::table('sales_orders')->where('store_id', $store)->whereNotIn('status', ['cancelled', 'completed', 'closed'])->exists()
+                            || DB::table('order_releases')->where('store_id', $store)->where('method', 'delivery')->whereNull('received_at')->exists(),
                         'cash' => DB::table('cash_sessions')->where('store_id', $store)->whereNull('closed_at')->exists(),
                         'purchasing' => DB::table('purchase_orders')->where('store_id', $store)->whereIn('status', ['draft', 'placed'])->exists() || DB::table('business_documents')->where('store_id', $store)->where('kind', 'receipt')->exists(),
                         'sales' => DB::table('business_documents')->where('store_id', $store)->where('kind', 'sale')->exists(),

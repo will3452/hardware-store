@@ -2,6 +2,7 @@
 @php
     $createOld = old('_form') === 'product-new';
     $next = session('product_next', []);
+    $selectedTemplate = $createOld ? old('template_key', '') : ($next['template_key'] ?? '');
     $selectedUnit = $createOld ? old('base_unit', 'piece') : ($next['base_unit'] ?? 'piece');
 @endphp
 <div class="hms-top"><div><h2>Products</h2><p>{{ $readOnly ? 'Browse product details, selling units, and stock levels.' : 'Add a name, choose how you sell it, and set the price. We’ll generate the SKU.' }}</p></div></div>
@@ -9,16 +10,18 @@
 <details class="hms-card" id="add-product" @if(($products->total() === 0 && !request()->filled('q')) || $createOld || $next) open @endif>
     <summary>Add a product</summary>
     <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-5 mt-5"
-          x-data="hmsProductForm(@js($sellingUnits), @js($selectedUnit))" @submit="submit($event)" @pageshow.window="busy = false"
+          x-data="hmsProductForm(@js($sellingUnits), @js($selectedUnit), @js($productTemplates), @js($selectedTemplate), @js($createOld ? old('specifications', []) : (object) []), @js($createOld ? old('name', '') : ''), @js(route('store.catalog', $store->id)))" @submit="submit($event)" @pageshow.window="busy = false"
           @if($next) x-init="$nextTick(() => $refs.productName.focus())" @endif>
         @csrf<input type="hidden" name="_form" value="product-new">
+        <x-product-specifications :templates="$productTemplates" :selected="$selectedTemplate"/>
         <div class="hms-grid three">
-            <div><x-field name="name" label="Product name & size" :use-old="$createOld" required maxlength="255" placeholder="e.g. Claw hammer, 16 oz" x-ref="productName"/><p class="hms-help mt-2">Include the size or variant to tell similar products apart.</p></div>
+            <div><x-field name="name" label="Product name & size" :use-old="$createOld" required maxlength="255" placeholder="e.g. Claw hammer, 16 oz" x-ref="productName" x-model="productName" x-bind:readonly="!!template"/><p class="hms-help mt-2">For guided products, the name follows your specifications. For general products, include the size or variant.</p></div>
             <div><label class="hms-field"><span>Sell by</span><select name="base_unit" required x-model="unit">
-                @foreach($sellingUnits as $key => $definition)<option value="{{ $key }}" @selected($selectedUnit === $key)>{{ $definition['label'] }}</option>@endforeach
+                @foreach($sellingUnits as $key => $definition)<option value="{{ $key }}" :disabled="!!template && !templates[template].units.includes(@js($key))" @selected($selectedUnit === $key)>{{ $definition['label'] }}</option>@endforeach
             </select></label><p class="hms-help mt-2" x-text="fractional ? 'Allows decimals, such as 0.5 or 1.25.' : 'Sold in whole quantities: 1, 2, 3…'">{{ ($sellingUnits[$selectedUnit]['fractional'] ?? false) ? 'Allows decimals, such as 0.5 or 1.25.' : 'Sold in whole quantities: 1, 2, 3…' }}</p></div>
             <div><x-field name="price" :label="'Selling price ('.$store->currency.')'" :use-old="$createOld" type="number" step="0.01" min="0" max="999999999.99" inputmode="decimal" placeholder="0.00" required/><p class="hms-help mt-2">Price for 1 <span x-text="unit">{{ $selectedUnit }}</span>. Enter zero only for a free item.</p></div>
         </div>
+        <div class="space-y-2"><button type="button" class="hms-secondary" @click="checkSimilar()" :disabled="checking">Check existing products</button><p class="hms-help" x-text="similarMessage" role="status"></p><ul class="max-h-48 overflow-auto text-sm list-disc pl-5"><template x-for="item in similar" :key="item.id"><li x-text="item.name + ' · ' + item.sku + ' · ' + item.base_unit + (item.active ? '' : ' · Archived')"></li></template></ul></div>
         <details class="hms-product-options" @if($createOld || !empty($next['category']) || !empty($next['brand'])) open @endif>
             <summary>Optional details <span class="font-normal">· category, brand, barcode & stock alert</span></summary>
             <div class="hms-grid three mt-4">
@@ -29,7 +32,11 @@
                 <div><x-field name="reorder" label="Low-stock alert at" :use-old="$createOld" type="number" step="1" x-bind:step="fractional ? '0.000001' : '1'" min="0" max="999999999" value="0"/><p class="hms-help mt-2">Alert when stock reaches this quantity or below. Zero means out of stock.</p></div>
             </div>
         </details>
-        <p class="hms-help">Choose the smallest unit you sell. For example, sell nails by piece and add a box conversion later. This unit is fixed after saving.</p>
+        <details class="hms-product-options" @if($createOld && old('pack_label')) open @endif>
+            <summary>Pack conversion <span class="font-normal">· optional</span></summary>
+            <div class="hms-grid mt-4"><x-field name="pack_label" label="Pack name (e.g. roll of 100 m)" :use-old="$createOld" maxlength="30"/><div><x-field name="pack_factor" label="Selling units in one pack" :use-old="$createOld" type="number" step="0.000001" min="0.000001" max="999999999"/><p class="hms-help mt-2">1 pack = this many <span x-text="unit"></span>. Confirm the actual contents; this conversion is fixed after saving.</p></div></div>
+        </details>
+        <p class="hms-help">Choose the smallest unit you sell. For example, sell nails by piece and optionally add the box conversion above. This unit is fixed after saving.</p>
         <div class="hms-product-actions">
             <button class="hms-primary" name="save_action" value="save" x-bind:aria-disabled="busy">Save product</button>
             <button class="hms-secondary" name="save_action" value="another" x-bind:aria-disabled="busy">Save and add another</button>
@@ -54,12 +61,14 @@
 <x-record-dialog :id="'product-'.$product->id" :title="$product->name.' · '.$product->sku" :reopen="$editOld || $unitOld">
     <div class="space-y-5 mt-5">
         <p>Selling units: @foreach($units[$product->id] ?? [] as $unit)<span class="hms-badge">{{ $unit->label }} = {{ App\Support\Amounts::quantity($unit->factor_micro) }} {{ $product->base_unit }}</span> @endforeach</p>
+        @if($product->template_key)<div class="hms-card"><strong>{{ $productTemplates[$product->template_key]['label'] ?? 'Product specifications' }}</strong><dl class="hms-grid three mt-3">@foreach($product->specifications ?? [] as $key => $value)@if($value !== '')<div><dt class="hms-help">{{ $productTemplates[$product->template_key]['fields'][$key]['label'] ?? $key }}</dt><dd>{{ $value }}</dd></div>@endif @endforeach</dl></div>@endif
         @if($readOnly)<p>Barcode: {{ $product->barcode ?: '—' }} · Low-stock alert: {{ App\Support\Amounts::quantity($product->reorder_micro) }} {{ $product->base_unit }}</p>@endif
         @if(!$readOnly && ($modules['catalog'] ?? null) === 'enabled')
-        <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-4">
+        <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-4" x-data="hmsProductForm(@js($sellingUnits), @js($product->base_unit), @js($productTemplates), @js($product->template_key ?? ''), @js($editOld ? old('specifications', $product->specifications ?? (object) []) : ($product->specifications ?? (object) [])), @js($editOld ? old('name', $product->name) : $product->name))">
             @csrf<input type="hidden" name="_form" value="product-{{ $product->id }}"><input type="hidden" name="product_id" value="{{ $product->id }}"><input type="hidden" name="base_unit" value="{{ $product->base_unit }}"><input type="hidden" name="fractional" value="{{ (int) $product->fractional }}">
+            @if($product->template_key)<x-product-specifications :templates="[$product->template_key => $productTemplates[$product->template_key]]" :selected="$product->template_key" :prefix="$product->id" editing/>@endif
             <div class="hms-grid three">
-                <x-field name="name" label="Product name & size" :value="$product->name" :use-old="$editOld" required maxlength="255"/>
+                <x-field name="name" label="Product name & size" :value="$product->name" :use-old="$editOld" required maxlength="255" x-model="productName" x-bind:readonly="!!template"/>
                 <x-field name="price" :label="'Price per '.$product->base_unit.' ('.$store->currency.')'" type="number" step="0.01" min="0" :value="App\Support\Amounts::display($product->price_minor)" :use-old="$editOld" required/>
                 <x-field name="reorder" label="Low-stock alert at" type="number" :step="$product->fractional ? '0.000001' : '1'" min="0" :value="App\Support\Amounts::display($product->reorder_micro, 6)" :use-old="$editOld"/>
                 <x-product-choice name="category" label="Category" :choices="$categories" :value="$product->category" :use-old="$editOld"/>

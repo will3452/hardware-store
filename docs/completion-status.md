@@ -1,5 +1,7 @@
 # First-release completion status — November 3, 2026
 
+The November 4 hardware extension is tracked in [release notes](release-notes.md). It adds guided products, optional customer credit, and quotations/partial releases while preserving existing businesses. The historical evidence below remains the original pilot baseline.
+
 ## Agreed scope
 
 Independent hardware businesses, one owner per store, online operation, Laravel, and a MySQL-compatible database on Hostinger Web/Cloud hosting. The app supports internal management records; registered fiscal invoicing stays with each store's existing process.
@@ -38,6 +40,6 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 - SMTP account email, optional announcement email, delivery history, and retries are implemented. Private links remain a fallback; [SMTP email](smtp-email.md) describes delivery guarantees and limits.
 - Backups are private on the hosting account. An independent off-site destination, retention policy, production-size timed restore, per-store extraction, and 12-month load benchmark remain operational follow-ups. On-server checksum verification does not prove a full disaster recovery target.
 - Owners must review their real opening quantities/costs and starting cash. No synthetic seed data is deployed.
-- Staff roles, customer credit, quotations, delivery management, offline selling, multiple branches, and provider payment integration are later increments.
+- Staff roles, offline selling, multiple branches, and provider payment integration remain later increments. Customer credit and quotations/basic pickup-delivery are implemented in the November 4 extension; see release notes for deployment and enablement status.
 
 Use [the user guide](user-guide.md) for daily work and [the deployment runbook](hostinger-deployment.md) for release/recovery operations.

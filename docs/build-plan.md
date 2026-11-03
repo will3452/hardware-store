@@ -12,6 +12,8 @@ M6 remains a broader operational readiness program. A local synthetic-data resto
 
 ## Delivery milestones
 
+After the operational pilot, the selected product increments are **H1 hardware product templates → H2 customer credit and collections → H3 quotations and partial pickup/delivery**. See the [hardware growth plan](hardware-growth-plan.md) for approved flows, policy decisions, dependencies, and acceptance evidence. The November 4 release candidate implements H1–H3; deployment evidence belongs in the release notes. These increments do not replace the remaining M6 operational checks or authorize subscription/signup implementation.
+
 | Milestone | Scope and dependencies | Exit evidence |
 | --- | --- | --- |
 | M0 Laravel and hosting foundation | Lock Laravel 13 and tested dependencies; adapt the proposed Livewire and Fortify starter; use MySQL; verify hPanel deployment capabilities | Laravel skeleton, MySQL CI, disabled public registration, two-store fixtures, verified public-path layout and bounded cron approach |

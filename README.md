@@ -13,6 +13,7 @@ Status: online operational pilot, version 0.3. Updated on October 31, 2026, usin
 | [User guide](docs/user-guide.md) | Same-day store setup, checkout, receiving, returns, cash closing, and recovery |
 | [Release notes](docs/release-notes.md) | Implemented features, verification, and remaining operational boundaries |
 | [Product requirements](docs/PRD.md) | Product scope, requirements, acceptance criteria, and release boundaries |
+| [Hardware growth plan](docs/hardware-growth-plan.md) | Selected next priorities: product templates, customer credit, and quotation-to-pickup/delivery flows; proposed scope and acceptance criteria |
 | [Architecture](docs/architecture.md) | Application boundaries, transaction handling, deployment, and API conventions |
 | [Data model](docs/data-model.md) | Entities, relationships, constraints, and financial record structure |
 | [Workflows and screens](docs/workflows.md) | Navigation, user journeys, state transitions, and error behavior |
@@ -100,6 +101,8 @@ The Shared Platform provides authentication, store isolation, module access, tra
 Confirmed requirements include independent store owners, online operation for the first version, automatic creation of one initial owner account, future support for additional users, per-store module access, announcements, and centralized reporting.
 
 The proposed first release covers products, inventory, purchasing, paid sales, returns, cash sessions, paid operating expenses, and reports. Customer credit, quotations, delivery management, and additional staff accounts are later increments. The domain model allows these additions without making them part of the first release.
+
+On November 3, the product owner selected hardware product templates, customer credit/collections, and quotations with partial pickup/delivery as the next three priorities. The approved [hardware growth plan](docs/hardware-growth-plan.md) is implemented as the next release candidate; see [release notes](docs/release-notes.md) for deployment evidence. Existing stores retain their data and opt into Customers, Credit, and Orders through admin module access. Subscription/signup policies remain separate.
 
 Implementation defaults are explicitly marked in the decision register. Currency, fiscal document requirements, the exact Hostinger plan and deployment layout, email delivery, and backup policy need resolution at the gates listed there. Production fiscal use depends on a jurisdiction-specific review; the documentation does not assert tax certification.
 

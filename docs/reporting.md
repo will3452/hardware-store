@@ -150,3 +150,14 @@ Compare admin and store results with identical scope and as-of time. For a stabl
 Export includes the same metadata and filters as the screen report. Protect customer details and neutralize spreadsheet formulas in text cells. Large exports reauthorize scope at generation and download, and cannot silently exceed the requested store set.
 
 Empty activity returns zero sales and collections, not a fabricated growth percentage. Margin is unavailable when net sales is zero or negative. A missing cost snapshot on activity included in the report produces an incomplete profit indicator rather than a confident zero cost result. An unsold product with zero stock and no cost basis does not by itself make the period's profit incomplete.
+
+
+## Active credit/reporting extension — November 4, 2026
+
+The credit extension supersedes the fully-paid-only assumption above when enabled. `Reports::summarize()` now derives collections/refunds from payments joined to their document kind and actual posting date. Sale and collection receipts contribute to collections; return refunds and collection reversals contribute to money paid back. Expenses, float, manual cash movements, and opening debt are excluded from customer collections.
+
+Both portals and summary CSVs include **Receivables** and **Overdue receivables** as end-date balances. Sum signed ledger entries through the end-date cutoff; overdue means the original obligation's due date is earlier than that local as-of date. Customer statements show full sale charges, receipts, returns/refunds and corrections with opening/closing balances. Statement exports use one consistent database snapshot and explicit store scope during streaming.
+
+Cash reconciliation additionally includes cash debt collections and subtracts cash collection reversals. Each creates a linked movement in the current session. A credit-only sale adds no drawer cash. A debt-only return pays no refund. Collections posted on another day change that day's payments and receivables, never its sales or cost of goods.
+
+Quotes, acceptance, cancellation of unfulfilled quantities, and delivery receipt confirmations have no financial effect. Sales/cost/stock effects are posted at each actual release. Accepted order prices are retained while inventory cost uses the actual release-time weighted average. Issued quotations carry issuer/customer snapshots and are internal management records.

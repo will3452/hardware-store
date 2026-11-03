@@ -1,6 +1,6 @@
 <div class="hms-card space-y-4">
 <h2>{{ $cartTitle ?? ($cartMode === 'sale' ? 'New paid sale' : 'New purchase order') }}</h2>
-@if($cartMode === 'sale')<p class="hms-help">Internal sales record · tax calculation is not configured. Confirm payment before posting.</p>@endif
+@if($cartMode === 'sale' && !($quoteMode ?? false))<p class="hms-help">Internal sales record · tax calculation is not configured. Review the payment arrangement before posting.</p>@endif
 <label class="hms-field"><span>Find a product or scan a barcode</span><input type="search" x-model="query" @input.debounce.250ms="search()" @keydown.enter.prevent="scan()" placeholder="Product name, SKU, or barcode" autocomplete="off"></label>
 <p x-show="searching" x-cloak>Searching…</p><p x-show="searchError" x-text="searchError" class="hms-error" x-cloak></p>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-auto">

@@ -22,12 +22,14 @@ final class Operations
 {
     public function __construct(private StoreAccess $access) {}
 
-    /** @param array<string, mixed> $data */
-    public function post(User $actor, string $kind, array $data): BusinessDocument
+    /** @param array<string, mixed> $data
+     * @param  array<string, array<string, mixed>>  $agreedLines  Server-built order snapshots only; never accepted by the HTTP posting endpoint.
+     */
+    public function post(User $actor, string $kind, array $data, array $agreedLines = []): BusinessDocument
     {
-        return DB::transaction(function () use ($actor, $kind, $data): BusinessDocument {
+        return DB::transaction(function () use ($actor, $kind, $data, $agreedLines): BusinessDocument {
             $store = $this->access->lock($actor);
-            $fingerprint = hash('sha256', json_encode([$kind, $data], JSON_THROW_ON_ERROR));
+            $fingerprint = hash('sha256', json_encode($agreedLines ? [$kind, $data, $agreedLines] : [$kind, $data], JSON_THROW_ON_ERROR));
             $existing = BusinessDocument::where('request_key', $data['request_key'])->first();
             if ($existing) {
                 StoreAccess::check(hash_equals($existing->fingerprint, $fingerprint), 'This submission number has already been used with different details. Open the original document or start a new transaction.');
@@ -37,9 +39,10 @@ final class Operations
             $module = match ($kind) {
                 'sale', 'return' => 'sales', 'receipt', 'receipt_reversal' => 'purchasing',
                 'expense', 'expense_reversal' => 'expenses', 'adjustment' => 'inventory',
+                'collection', 'collection_reversal', 'opening_receivable', 'opening_receivable_reversal' => 'credit',
                 default => throw new \InvalidArgumentException('Unknown operation.'),
             };
-            $resolution = in_array($kind, ['return', 'receipt_reversal', 'expense_reversal']);
+            $resolution = in_array($kind, ['return', 'receipt_reversal', 'expense_reversal', 'collection', 'collection_reversal', 'opening_receivable_reversal']);
             $this->access->module($module, $resolution);
             foreach (StoreAccess::DEPENDENCIES[$module] as $dependency) {
                 // Historical corrections use snapshots, without editing the catalog.
@@ -53,7 +56,10 @@ final class Operations
                 'user_id' => $actor->id, 'metadata' => ['notes' => $data['notes'] ?? '', 'store_name' => $store->display_name, 'store_address' => $store->address_line_1.', '.$store->city, 'currency' => $store->currency, 'tax_treatment' => 'unconfigured_internal_record'], 'posted_at' => now(),
             ]);
             match ($kind) {
-                'sale' => $this->sale($doc, $data),
+                'sale' => $this->sale($doc, $data, $agreedLines),
+                'opening_receivable' => app(CreditAccounts::class)->opening($doc, $data),
+                'collection' => $this->collection($doc, $data),
+                'collection_reversal', 'opening_receivable_reversal' => $this->reverseCredit($doc, $data),
                 'return' => $this->returnSale($doc, $data),
                 'adjustment' => $this->adjust($doc, $data),
                 'receipt' => $this->receive($doc, $data),
@@ -68,8 +74,10 @@ final class Operations
         }, 3);
     }
 
-    /** @param array<string, mixed> $data */
-    private function sale(BusinessDocument $doc, array $data): void
+    /** @param array<string, mixed> $data
+     * @param  array<string, array<string, mixed>>  $agreedLines
+     */
+    private function sale(BusinessDocument $doc, array $data, array $agreedLines = []): void
     {
         $this->matchingSession($data['cash_session_id'] ?? null);
         $seen = [];
@@ -79,15 +87,20 @@ final class Operations
             StoreAccess::check(! in_array($product->id, $seen), 'Combine duplicate products into one line.');
             $seen[] = $product->id;
             $unit = ProductUnit::where('product_id', $product->id)->whereKey($input['unit_id'])->firstOrFail();
-            $quantity = $this->quantity($product, $input['quantity'], (int) $unit->factor_micro);
+            $snapshot = $agreedLines[$product->id] ?? null;
+            $quantity = $this->quantity($product, $input['quantity'], $snapshot ? 1000000 : (int) $unit->factor_micro);
             $price = Amounts::parse($input['price']);
             $gross = Amounts::ratio($price, $quantity, (int) $unit->factor_micro);
             $discount = ($input['discount_type'] ?? 'amount') === 'percent'
                 ? Amounts::ratio($gross, Amounts::parse($input['discount'] ?? '0'), 10000)
                 : Amounts::parse($input['discount'] ?? '0');
             StoreAccess::check($discount <= $gross, 'A line discount cannot exceed its value.');
+            if ($snapshot) {
+                $gross = $snapshot['gross_minor'];
+                $discount = $snapshot['discount_minor'];
+            }
             $cost = $this->outgoingCost($product, $quantity);
-            $line = $this->line($doc, $product, $quantity, $cost, ['unit_label' => $unit->label, 'factor_micro' => $unit->factor_micro, 'price_minor' => $price, 'gross_minor' => $gross, 'discount_minor' => $discount, 'total_minor' => $gross - $discount]);
+            $line = $this->line($doc, $product, $quantity, $cost, $snapshot ?? ['unit_label' => $unit->label, 'factor_micro' => $unit->factor_micro, 'price_minor' => $price, 'gross_minor' => $gross, 'discount_minor' => $discount, 'total_minor' => $gross - $discount]);
             $this->move($doc, $product, -$quantity, -$cost, 'Sale');
             $doc->gross_minor += $gross;
             $doc->discount_minor += $discount;
@@ -114,13 +127,14 @@ final class Operations
                 $this->payment($doc, $payment['method'], $amount, $payment['reference']);
             }
         }
-        $cashApplied = (int) $doc->total_minor - $noncash;
-        StoreAccess::check($cashApplied >= 0 && $cashTendered >= $cashApplied, 'Payments must cover the full total. Noncash payments cannot exceed the total.');
+        StoreAccess::check($noncash <= $doc->total_minor, 'Noncash payments cannot exceed the total.');
+        $cashApplied = min($cashTendered, (int) $doc->total_minor - $noncash);
         if ($cashApplied > 0) {
             $this->payment($doc, 'cash', $cashApplied);
             $this->cashMove($cashApplied, 'Sale', $doc->id, $doc->id.':sale');
         }
         $doc->metadata = array_merge($doc->metadata, ['customer' => $data['customer'] ?? '', 'cash_tendered_minor' => $cashTendered, 'change_minor' => $cashTendered - $cashApplied]);
+        app(CreditAccounts::class)->sale($doc, $data, $noncash + $cashApplied);
     }
 
     /** @param array<string, mixed> $data */
@@ -162,7 +176,8 @@ final class Operations
             }
         }
         StoreAccess::check(count($seen) > 0, 'Enter at least one return quantity.');
-        $this->refund($doc, $data);
+        $reduction = app(CreditAccounts::class)->reduceForReturn($doc, $original);
+        $this->refund($doc, $data, $doc->total_minor - $reduction);
     }
 
     /** @param array<string, mixed> $data */
@@ -281,14 +296,50 @@ final class Operations
     }
 
     /** @param array<string, mixed> $data */
-    private function refund(BusinessDocument $doc, array $data): void
+    private function collection(BusinessDocument $doc, array $data): void
     {
+        $amount = app(CreditAccounts::class)->allocate($doc, $data);
+        StoreAccess::check(array_key_exists($data['method'], app(StoreContext::class)->store()->acceptedPayments()), 'This payment method is no longer accepted.');
         if ($data['method'] === 'cash') {
-            $this->cashMove(-(int) $doc->total_minor, 'Customer refund', $doc->id, $doc->id.':refund');
+            $this->matchingSession($data['cash_session_id'] ?? null);
+            $this->cashMove($amount, 'Customer collection', $doc->id, $doc->id.':collection');
         } else {
             $this->confirmed($data);
         }
-        $this->payment($doc, $data['method'], (int) $doc->total_minor, $data['reference'] ?? null);
+        $this->payment($doc, $data['method'], $amount, $data['reference'] ?? null);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function reverseCredit(BusinessDocument $doc, array $data): void
+    {
+        $kind = $doc->kind === 'collection_reversal' ? 'collection' : 'opening_receivable';
+        $original = BusinessDocument::where('kind', $kind)->whereKey($data['original_id'])->firstOrFail();
+        app(CreditAccounts::class)->reverse($doc, $original);
+        if ($kind === 'collection') {
+            $payment = Payment::where('business_document_id', $original->id)->firstOrFail();
+            if ($payment->method === 'cash') {
+                $this->matchingSession($data['cash_session_id'] ?? null);
+                $this->cashMove(-$doc->total_minor, 'Collection reversal', $doc->id, $doc->id.':collection-reversal');
+            } else {
+                $this->confirmed($data);
+            }
+            $this->payment($doc, $payment->method, $doc->total_minor, $data['reference'] ?? null);
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function refund(BusinessDocument $doc, array $data, ?int $amount = null): void
+    {
+        $amount ??= $doc->total_minor;
+        if ($amount === 0) {
+            return;
+        }
+        if ($data['method'] === 'cash') {
+            $this->cashMove(-$amount, 'Customer refund', $doc->id, $doc->id.':refund');
+        } else {
+            $this->confirmed($data);
+        }
+        $this->payment($doc, $data['method'], $amount, $data['reference'] ?? null);
     }
 
     /** @param array<string, mixed> $data */

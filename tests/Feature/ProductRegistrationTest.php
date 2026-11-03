@@ -143,4 +143,46 @@ class ProductRegistrationTest extends TestCase
         $this->post(route('store.products.save', $this->store), $this->input())->assertForbidden();
         $this->assertDatabaseCount('products', 0);
     }
+
+    public function test_guided_product_saves_specifications_and_conversion_without_creating_stock(): void
+    {
+        $input = $this->wireInput();
+        $this->post(route('store.products.save', $this->store), $input)->assertSessionHasNoErrors();
+        $product = DB::table('products')->first();
+        $this->assertSame('THHN · 2 · mm² · Red', $product->name);
+        $this->assertSame('wire', $product->template_key);
+        $this->assertEquals(0, $product->quantity_micro);
+        $this->assertDatabaseHas('product_units', ['product_id' => $product->id, 'label' => 'roll of 100 m', 'factor_micro' => 100000000]);
+        $this->get(route('store.page', [$this->store, 'products']))->assertOk()->assertSee('Electrical wire')->assertSee('THHN');
+        $this->post(route('store.products.save', $this->store), $input)->assertSessionHasErrors('name');
+        $this->assertDatabaseCount('products', 1);
+        $this->assertDatabaseCount('product_units', 2);
+        $input['specifications']['size'] = '3.5';
+        $this->post(route('store.products.save', $this->store), $input)->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('products', 2);
+    }
+
+    public function test_invalid_template_specs_and_pack_roll_back_without_partial_products(): void
+    {
+        foreach ([['template_key' => 'unknown'], ['specifications' => ['type' => 'THHN']], ['base_unit' => 'piece'], ['pack_factor' => '0']] as $invalid) {
+            $this->post(route('store.products.save', $this->store), array_replace($this->wireInput(), $invalid))->assertSessionHasErrors();
+        }
+        $this->assertDatabaseCount('products', 0);
+        $this->assertDatabaseCount('product_units', 0);
+    }
+
+    public function test_template_edit_preserves_units_and_older_form_preserves_specs(): void
+    {
+        $this->post(route('store.products.save', $this->store), $this->wireInput())->assertSessionHasNoErrors();
+        $product = DB::table('products')->first();
+        $this->post(route('store.products.save', $this->store), ['product_id' => $product->id, 'sku' => $product->sku, 'name' => $product->name, 'base_unit' => 'meter', 'fractional' => '1', 'price' => '30'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'template_key' => 'wire', 'name' => $product->name, 'price_minor' => 3000]);
+        $this->assertDatabaseCount('product_units', 2);
+    }
+
+    /** @return array<string, mixed> */
+    private function wireInput(): array
+    {
+        return ['template_key' => 'wire', 'specifications' => ['type' => 'THHN', 'size' => '2.0', 'size_unit' => 'mm²', 'color' => 'Red'], 'base_unit' => 'meter', 'price' => '25', 'pack_label' => 'roll of 100 m', 'pack_factor' => '100'];
+    }
 }

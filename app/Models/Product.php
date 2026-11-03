@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * @property array<string, string>|null $specifications
  * @property string $id
  * @property bool $fractional
  * @property bool $active
@@ -25,6 +26,6 @@ class Product extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['fractional' => 'boolean', 'active' => 'boolean', 'price_minor' => 'integer', 'reorder_micro' => 'integer', 'quantity_micro' => 'integer', 'value_micro' => 'integer', 'stock_version' => 'integer'];
+        return ['specifications' => 'array', 'fractional' => 'boolean', 'active' => 'boolean', 'price_minor' => 'integer', 'reorder_micro' => 'integer', 'quantity_micro' => 'integer', 'value_micro' => 'integer', 'stock_version' => 'integer'];
     }
 }

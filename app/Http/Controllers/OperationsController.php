@@ -10,16 +10,20 @@ use App\Models\CashSession;
 use App\Models\DocumentAttachment;
 use App\Models\DocumentLine;
 use App\Models\InventoryMovement;
+use App\Models\OrderRelease;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
+use App\Models\ReceivableEntry;
 use App\Models\Store;
 use App\Models\StoreModule;
 use App\Models\Supplier;
+use App\Services\CreditAccounts;
 use App\Services\Operations;
 use App\Services\ProductCatalog;
+use App\Services\ProductTemplates;
 use App\Services\Purchasing;
 use App\Services\Reports;
 use App\Services\StoreAccess;
@@ -43,6 +47,12 @@ class OperationsController extends Controller
 
     public function page(Request $request, string $store, string $page = 'overview'): View|StreamedResponse
     {
+        if ($page === 'orders') {
+            return app(SalesOrderController::class)->index($request);
+        }
+        if ($page === 'customers') {
+            return app(CustomerController::class)->index($request);
+        }
         abort_unless(in_array($page, ['overview', 'products', 'inventory', 'purchasing', 'sales', 'cash', 'expenses', 'reports', 'audit', 'profile']), 404);
         $this->access->history($page);
         $perPage = RecordPage::size($request);
@@ -53,6 +63,7 @@ class OperationsController extends Controller
             $data['categories'] = $catalog->choices('category');
             $data['brands'] = $catalog->choices('brand');
             $data['sellingUnits'] = ProductCatalog::UNITS;
+            $data['productTemplates'] = app(ProductTemplates::class)->choices();
         }
         if (in_array($page, ['products', 'inventory'])) {
             $request->validate(['q' => ['nullable', 'string', 'max:100']]);
@@ -184,26 +195,29 @@ class OperationsController extends Controller
         $this->access->module('catalog');
         $request->validate(['q' => ['nullable', 'string', 'max:100']]);
         $q = $request->string('q')->toString();
-        $products = Product::where('active', true)->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q))->orderBy('name')->limit(30)->get();
+        $products = Product::when(! $request->boolean('include_archived'), fn ($q) => $q->where('active', true))->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q))->orderBy('name')->limit(30)->get();
         $units = ProductUnit::whereIn('product_id', $products->pluck('id'))->get()->groupBy('product_id');
 
-        return response()->json($products->map(fn ($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku, 'barcode' => $product->barcode, 'base_unit' => $product->base_unit, 'fractional' => $product->fractional, 'quantity_micro' => $product->quantity_micro, 'price_minor' => $product->price_minor, 'units' => $units->get($product->id, collect())->values()])->values());
+        return response()->json($products->map(fn ($product) => ['id' => $product->id, 'active' => $product->active, 'name' => $product->name, 'sku' => $product->sku, 'barcode' => $product->barcode, 'base_unit' => $product->base_unit, 'fractional' => $product->fractional, 'quantity_micro' => $product->quantity_micro, 'price_minor' => $product->price_minor, 'units' => $units->get($product->id, collect())->values()])->values());
     }
 
     public function product(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'product_id' => ['nullable', 'ulid'], 'sku' => ['nullable', 'string', 'max:80'], 'barcode' => ['nullable', 'string', 'max:100', 'regex:/^\S+$/u'],
-            'name' => ['required', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:80'], 'brand' => ['nullable', 'string', 'max:80'],
+            'name' => ['nullable', 'required_without:template_key', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:80'], 'brand' => ['nullable', 'string', 'max:80'],
             'category_choice' => ['nullable', 'string', 'max:86'], 'brand_choice' => ['nullable', 'string', 'max:86'],
             'base_unit' => ['required', 'string', 'max:30'], 'fractional' => ['boolean'], 'active' => ['boolean'],
             'price' => ['required', 'string', 'regex:/^\d{1,9}(\.\d{1,2})?$/D'], 'reorder' => ['nullable', 'string', 'regex:/^\d{1,9}(\.\d{1,6})?$/D'],
             'save_action' => ['nullable', Rule::in(['save', 'another'])],
+            'template_key' => ['nullable', 'string', 'max:30'], 'specifications' => ['nullable', 'array'],
+            'pack_label' => ['nullable', 'required_with:pack_factor', 'string', 'max:30'],
+            'pack_factor' => ['nullable', 'required_with:pack_label', 'string', 'regex:/^\d{1,9}(\.\d{1,6})?$/D'],
         ]);
         $product = app(ProductCatalog::class)->save($request->user(), $data);
         if (empty($data['product_id']) && ($data['save_action'] ?? 'save') === 'another') {
             return to_route('store.page', [$this->context->id(), 'products'])->with('status', $product->name.' saved · '.$product->sku.'. Ready for the next product.')
-                ->with('product_next', $product->only(['category', 'brand', 'base_unit']));
+                ->with('product_next', $product->only($product->template_key ? ['category', 'brand', 'base_unit', 'template_key'] : ['category', 'brand', 'base_unit']));
         }
 
         return back()->with('status', $product->name.' saved · '.$product->sku.'.');
@@ -228,11 +242,12 @@ class OperationsController extends Controller
 
     public function post(Request $request, string $store, string $kind): RedirectResponse
     {
-        abort_unless(in_array($kind, ['sale', 'return', 'adjustment', 'receipt', 'receipt_reversal', 'expense', 'expense_reversal']), 404);
-        $rules = ['cash_session_id' => [in_array($kind, ['sale', 'return']) || ($kind === 'expense' && $request->input('method') === 'cash') ? 'required' : 'nullable', 'ulid'], 'request_key' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:2000']];
+        abort_unless(in_array($kind, ['sale', 'return', 'adjustment', 'receipt', 'receipt_reversal', 'expense', 'expense_reversal', 'collection', 'collection_reversal', 'opening_receivable', 'opening_receivable_reversal']), 404);
+        $rules = ['cash_session_id' => [in_array($kind, ['sale', 'return']) || (in_array($kind, ['expense', 'collection']) && $request->input('method') === 'cash') ? 'required' : 'nullable', 'ulid'], 'request_key' => ['required', 'uuid'], 'notes' => ['nullable', 'string', 'max:2000']];
         $payment = ['method' => ['required', Rule::in(['cash', 'card', 'bank', 'ewallet'])], 'reference' => ['nullable', 'string', 'max:255'], 'confirmed' => ['nullable', 'boolean']];
         $rules = array_merge($rules, match ($kind) {
             'sale' => [
+                'settlement' => ['nullable', Rule::in(['paid', 'credit'])], 'customer_id' => ['nullable', 'required_if:settlement,credit', 'ulid'], 'due_date' => ['nullable', 'required_if:settlement,credit', 'date_format:Y-m-d'],
                 'customer' => ['nullable', 'string', 'max:255'], 'lines' => ['required', 'array', 'min:1', 'max:100'],
                 'lines.*.product_id' => ['required', 'ulid'], 'lines.*.unit_id' => ['required', 'ulid'],
                 'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.price' => ['required', 'string', 'max:20'], 'lines.*.catalog_price_minor' => ['nullable', 'integer', 'min:0'],
@@ -240,6 +255,9 @@ class OperationsController extends Controller
                 'payments' => ['required', 'array', 'min:1', 'max:4'], 'payments.*.method' => $payment['method'],
                 'payments.*.amount' => ['required', 'string', 'max:20'], 'payments.*.reference' => $payment['reference'], 'payments.*.confirmed' => $payment['confirmed'],
             ],
+            'opening_receivable' => ['customer_id' => ['required', 'ulid'], 'amount' => ['required', 'string', 'max:20'], 'due_date' => ['required', 'date_format:Y-m-d'], 'original_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'], 'reference' => ['required', 'string', 'max:255'], 'notes' => ['required', 'string', 'max:2000']],
+            'collection' => array_merge($payment, ['customer_id' => ['required', 'ulid'], 'amount' => ['required', 'string', 'max:20'], 'allocations' => ['required', 'array', 'min:1', 'max:100'], 'allocations.*.obligation_id' => ['required', 'ulid'], 'allocations.*.amount' => ['required', 'string', 'max:20']]),
+            'collection_reversal', 'opening_receivable_reversal' => ['original_id' => ['required', 'ulid'], 'reference' => $payment['reference'], 'confirmed' => $payment['confirmed'], 'notes' => ['required', 'string', 'max:2000']],
             'return' => array_merge($payment, ['original_id' => ['required', 'ulid'], 'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.source_line_id' => ['required', 'ulid'], 'lines.*.quantity' => ['required', 'string', 'max:20'], 'lines.*.disposition' => ['required', Rule::in(['sellable', 'damaged'])]]),
             'receipt' => ['order_id' => ['required', 'ulid'], 'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.order_line_id' => ['required', 'ulid'], 'lines.*.quantity' => ['required', 'string', 'max:20']],
             'adjustment' => ['product_id' => ['required', 'ulid'], 'stock_version' => ['required', 'integer', 'min:0'], 'mode' => ['required', Rule::in(['opening', 'count', 'damage'])], 'quantity' => ['required', 'string', 'max:20'], 'unit_cost' => ['nullable', 'string', 'max:20'], 'notes' => ['required', 'string', 'max:2000']],
@@ -262,6 +280,9 @@ class OperationsController extends Controller
             'payments' => Payment::where('business_document_id', $doc->id)->get(),
             'returns' => DocumentLine::whereIn('source_line_id', DocumentLine::where('business_document_id', $doc->id)->select('id'))->get()->groupBy('source_line_id'),
             'corrections' => BusinessDocument::where('original_id', $doc->id)->get(),
+            'orderRelease' => OrderRelease::where('business_document_id', $doc->id)->first(),
+            'accountBalance' => $doc->customer_id ? app(CreditAccounts::class)->balance($doc->customer_id, $doc->id) : null,
+            'allocations' => ReceivableEntry::where('business_document_id', $doc->id)->get(),
             'attachments' => DocumentAttachment::where('business_document_id', $doc->id)->get(),
         ]);
     }

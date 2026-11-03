@@ -3,10 +3,12 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CashReportController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\SalesOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -21,6 +23,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('stores/{store}/view')->middleware('store.admin-view')->name('stores.view.')->group(function () {
             Route::get('/', [OperationsController::class, 'page'])->name('dashboard');
             Route::get('workspace/{page}', [OperationsController::class, 'page'])->name('page');
+            Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-order');
+            Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customer');
             Route::get('documents/{document}', [OperationsController::class, 'document'])->name('document');
             Route::get('purchases/{order}', [OperationsController::class, 'order'])->name('order');
             Route::get('cash-sessions/{cashSession}', [CashReportController::class, 'show'])->name('cash.show');
@@ -45,6 +49,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [OperationsController::class, 'page'])->name('dashboard');
         Route::get('workspace/{page}', [OperationsController::class, 'page'])->name('page');
         Route::get('catalog', [OperationsController::class, 'catalog'])->name('catalog');
+        Route::get('customers/search', [CustomerController::class, 'search'])->name('customers.search');
+        Route::post('order-actions/{action}/{salesOrder?}', [SalesOrderController::class, 'action'])->name('order.action');
+        Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-order');
+        Route::post('customers', [CustomerController::class, 'save'])->name('customers.save');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customer');
         Route::post('products', [OperationsController::class, 'product'])->name('products.save');
         Route::post('units', [OperationsController::class, 'unit'])->name('units.save');
         Route::post('post/{kind}', [OperationsController::class, 'post'])->name('post');

@@ -1,3 +1,18 @@
+# Hardware templates, customer credit, and orders — November 4, 2026
+
+Deployment status: release candidate; production installation pending. The owner approved these flows with an explicit requirement to preserve existing users and update affected workflows.
+
+- Guided wire, pipe/fitting, fastener, steel/lumber and paint registration with structured specifications, generated names/SKUs, store-local suggestions, existing/archived product lookup, duplicate checks and atomic pack conversion. General products and existing custom units remain supported.
+- Customer accounts with reviewed credit limits/terms, explicit partially/unpaid checkout, opening receivables, payment allocations, statements/CSV and eligible reversals. Returns reduce original unpaid debt before refunding money actually received.
+- Quotation drafts, issue/acceptance, immutable issuer/customer/product/price snapshots, linked revisions of unfulfilled remainders, partial pickup/dispatch, cancellation, and separate receipt confirmation. Each physical release posts one sale/stock/payment/receivable transaction. Full-return dispatches cannot be marked received later.
+- Updated checkout, returns, cash movements, shared store/admin reports, platform totals, document details, exports, module dependencies, onboarding wording and administrator read-only views. Collections now use actual payment records; debt collection cannot create new sales. Receivables/overdue balances use as-of dates.
+- Three additive migrations retain legacy accounts, memberships, products, unit conversions, stock, payments, documents and retry fingerprints. No synthetic data, customer accounts or debts are inferred from historical records. Customers/Credit/Orders start disabled for existing stores; admin enables them explicitly when a store is ready.
+- Validation: **144 tests / 1,232 assertions**, Pint and PHPStan pass. Includes separate-process credit-limit/collection/release races, legacy-schema upgrade with unchanged protected values and report totals, original posting retries, cross-store/admin isolation, actual roll-to-meter receiving/sales, and exact partial-release discount rounding.
+- Browser walkthrough with a local synthetic store: guided wire/pack save; PHP 5,000 sale with PHP 2,000 received and subsequent PHP 1,000 allocation; quote/accept/40-of-100-bag dispatch with PHP 10,000 payment and 60 bags remaining. Desktop and 390px mobile layout checked, no page overflow or browser errors; the existing-product check finds the previously created item. No production records were used for UI tests.
+- Boundaries: online-only, one operational owner, internal management records; no deposits/prepayment, stock reservations, automatic customer messages, interest/penalties, provider charging or fiscal certification. Existing operational backup/recovery follow-ups remain separate.
+
+See [the user guide](user-guide.md#hardware-workflows--november-4-extension) and [approved growth plan](hardware-growth-plan.md).
+
 # Store onboarding checklist — November 3, 2026
 
 - Replaced the static Overview setup links with a collapsible checklist, progress count/bar, automatic completed states, and a next-step action. With core modules enabled it covers contact details, accepted payments, first product, starting stock, first cash drawer, and first real sale.

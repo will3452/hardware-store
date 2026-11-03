@@ -235,3 +235,12 @@ After any Git push, check both the private application revision and the public d
 
 
 The SMTP release adds `app:mail-drain` to the existing every-minute Laravel scheduler; no extra hPanel task or permanent queue process is required. Apply the additive email migration before caching routes/views. Keep SMTP credentials server-side and verify one explicitly authorized test recipient, SMTP acceptance, and an automatic scheduler run.
+
+
+## November 4 hardware workflow upgrade
+
+Deploy the three `2026_11_03_180*` migrations together with the matching PHP, Blade, and built assets. They add nullable product/document metadata and separate customer, receivable, order, and release tables. Existing store module settings are retained; `customers`, `credit`, and `orders` start disabled for existing stores. Enable them deliberately from Admin → Manage store → Module access after reviewing the user guide and dependencies. Product templates are optional within the existing catalog.
+
+Before applying this release, take and verify an on-server recovery snapshot, retain the prior code and asset manifest, and capture checksums of existing operational rows and report totals. Use a short maintenance window, `migrate --force`, compiled views, and rollback-only synthetic smoke checks. Compare the protected records, reports, and `.env` again before reopening. Do not reseed, recreate databases, change existing credentials, or rewrite old stock, units, prices, and document snapshots.
+
+For a code rollback, restore the prior code and asset manifest while retaining the additive schema. Keep old hashed assets available. Do **not** roll back these migrations or delete new operational tables on production: customers, collections, or orders may already have been entered after enablement. Preserve the existing server-only `bun.lock`.

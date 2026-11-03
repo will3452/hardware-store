@@ -134,3 +134,14 @@ Only explicit GET/HEAD viewing routes exist. Store mutation forms are omitted, t
 Products, inventory/movements, suppliers/orders/receipts, sales/returns, expenses, cash sessions, reports, activity, profile, and supporting attachments remain scoped to the selected store. Mixing a document/order/session/attachment ID from another store returns not found. Filters, pagination, detail links, and attachment links stay within the admin route family. CSV downloads additionally require `platform.reports.export`; report and cash exports retain explicit store scope during streaming.
 
 Each successful view or download request creates `platform.store_viewed` with the real admin ID, store, route/page, subject ID, and export flag. This records access, not proof that a streamed download finished. Existing report-export audit events remain. Private responses are not cached. Store context is cleared after successful and failed requests.
+
+
+## Hardware extension permissions — November 4, 2026
+
+`customers` controls account creation/editing; `credit` depends on customers/sales/cash; `orders` depends on customers/catalog. A physical order release also passes normal sales/inventory/cash checks and credit checks if underpaid. These new modules start disabled on existing stores; their previous module modes and accounts are preserved.
+
+Restricted credit allows collections and eligible opening/collection reversals, with available resolution dependencies. Restricted orders allows cancellation of the unfulfilled remainder and delivery receipt confirmation. New quotes, revisions, acceptance, and physical releases require enabled orders. Customers with history and restricted/disabled source modules retain scoped history. Full disabling of account modules is conservatively blocked once receivable history exists; open orders prevent full order disabling.
+
+New customer, statement, and sales-order GET routes exist in the admin read-only namespace and require the existing store-view grant/MFA. Statement CSV requires the separate platform export permission; owners require their reports module enabled for export. No admin merchant-write endpoints are added. Customer information is not exposed in aggregate platform metrics.
+
+Requests cannot select another store's customers, obligations, units, quote lines, releases, or documents. All new table relationships use scoped ownership constraints, and mutations recheck current lifecycle, membership and entitlement under the store lock. No customer login accounts or outbound customer messages are created.

@@ -12,11 +12,12 @@ use Illuminate\Validation\ValidationException;
 
 final class StoreAccess
 {
-    public const MODULES = ['catalog', 'inventory', 'cash', 'sales', 'purchasing', 'expenses', 'reports'];
+    public const MODULES = ['catalog', 'inventory', 'cash', 'sales', 'purchasing', 'expenses', 'reports', 'customers', 'credit', 'orders'];
 
     public const DEPENDENCIES = [
         'inventory' => ['catalog'], 'sales' => ['catalog', 'inventory', 'cash'],
         'purchasing' => ['catalog', 'inventory'], 'expenses' => ['cash'],
+        'credit' => ['customers', 'sales', 'cash'], 'orders' => ['customers', 'catalog'],
     ];
 
     public const PERMISSIONS = ['platform.portal.access', 'platform.stores.manage', 'platform.stores.view', 'platform.modules.manage', 'platform.announcements.manage', 'platform.reports.read', 'platform.reports.export', 'platform.audit.read'];

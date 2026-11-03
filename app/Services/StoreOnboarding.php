@@ -31,7 +31,7 @@ final class StoreOnboarding
             ['products', 'Add your first product', 'Enter a product name, selling unit, and price. Your SKU can be generated automatically.', 'products', 'add-product', 'Add a product', ['catalog'], Product::exists()],
             ['inventory', 'Record starting stock', 'Enter actual opening quantities and reviewed costs, or receive your first purchase delivery.', 'inventory', 'stock-products', 'Enter opening stock', ['catalog', 'inventory'], InventoryMovement::where('quantity_micro', '>', 0)->whereIn('business_document_id', BusinessDocument::select('id')->whereIn('kind', ['adjustment', 'receipt']))->exists()],
             ['cash', 'Open your first cash drawer', 'Count the starting cash. Enter zero if the drawer is empty.', 'cash', '', 'Open cash drawer', ['cash'], CashSession::exists()],
-            ['sale', 'Record your first real sale', 'When a customer buys, post the paid sale. There is no need to create a test sale to finish setup.', 'sales', '', 'Go to point of sale', ['catalog', 'inventory', 'cash', 'sales'], $firstSale],
+            ['sale', 'Record your first real sale', 'When a customer buys, post the sale with its payment or approved customer credit. There is no need to create a test sale to finish setup.', 'sales', '', 'Go to point of sale', ['catalog', 'inventory', 'cash', 'sales'], $firstSale],
         ];
 
         $steps = [];

@@ -152,3 +152,25 @@ Do not add active placeholder behavior for these in release one. Their design re
 - Multiple staff permissions and assignment history.
 
 Every later store-owned table must join the isolation inventory and its access tests before release.
+
+
+## Implemented hardware extension — November 4, 2026
+
+Additive migrations `180000`–`180200` retain all legacy tables/values. No product, customer, debt, user, or sale is inferred from historical free text.
+
+| Entity/change | Contract |
+| --- | --- |
+| Product template fields | Nullable key/version/specifications/fingerprint; scoped unique non-null fingerprint; legacy products keep null fields |
+| Customers | Store-owned identity/contact/address, active and credit flags, integer limit, term days, optimistic edit revision |
+| Business document additions | Nullable scoped customer FK and due date; legacy documents remain null and fully settled |
+| Receivable entries | Signed integer amount, customer, source document, original obligation, entry kind and posting time; scoped unique source/obligation/kind |
+| Sales orders | Draft/issued/accepted/partial/completed/closed/cancelled states; issuer/customer snapshots, validity, project, revision, quote version, and a unique scoped replacement link |
+| Sales order lines | Accepted product/unit/quantity/price/discount snapshots; cumulative released/cancelled quantities and allocated amount/discount |
+| Order releases | One linked sale, release method/recipient/address/reference, dispatch time and separate receipt confirmation |
+| Sales order actions | Scoped request key and payload fingerprint with action/result order for retries |
+
+Receivable charges are positive. At-sale receipts and later allocations reduce balances; returns post the full negative return plus any positive refund to preserve both activity and the net debt reduction. Collection/opening corrections post opposite entries. Each obligation's remaining balance must be nonnegative. Opening debt affects neither sales nor inventory/cash.
+
+Store-row locks serialize posting, credit capacity, allocations, order release/cancellation, and retries. A release creates one normal sale using trusted server-read order snapshots and updates cumulative quantities in the same transaction. Public sale requests cannot supply trusted snapshots. Unit conversion and fixed-discount rounding remain exact across partial releases. Returned quantities stay on linked sale history rather than resetting order fulfillment.
+
+Migrations create the new modules as disabled for existing stores without changing legacy module rows. Code rollback retains the additive schema/data; do not run destructive migration rollback on production after the new workflows have records.

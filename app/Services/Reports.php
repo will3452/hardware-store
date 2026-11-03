@@ -27,10 +27,22 @@ final class Reports
             $loss = Amounts::ratio((int) $rows->sum('loss'), 1, 10000);
             $inventory = DB::table('inventory_movements')->whereIn('store_id', $storeIds)->where('created_at', '<', $end)->sum('value_micro');
 
+            $payments = DB::table('payments as p')->join('business_documents as d', function ($join): void {
+                $join->on('d.id', '=', 'p.business_document_id')->on('d.store_id', '=', 'p.store_id');
+            })->whereIn('d.store_id', $storeIds)->where('d.posted_at', '>=', $start)->where('d.posted_at', '<', $end)
+                ->whereIn('d.kind', ['sale', 'collection', 'return', 'collection_reversal'])->selectRaw('d.kind, SUM(p.amount_minor) total')->groupBy('d.kind')->pluck('total', 'kind');
+            $collections = (int) ($payments['sale'] ?? 0) + (int) ($payments['collection'] ?? 0);
+            $refunds = (int) ($payments['return'] ?? 0) + (int) ($payments['collection_reversal'] ?? 0);
+            $balances = DB::table('receivable_entries')->whereIn('store_id', $storeIds)->where('posted_at', '<', $end)->selectRaw('store_id, obligation_id, SUM(amount_minor) balance')->groupBy('store_id', 'obligation_id');
+            $receivables = DB::query()->fromSub($balances, 'r')->join('business_documents as d', function ($join): void {
+                $join->on('d.id', '=', 'r.obligation_id')->on('d.store_id', '=', 'r.store_id');
+            })->selectRaw('COALESCE(SUM(r.balance), 0) outstanding, COALESCE(SUM(CASE WHEN d.due_date < ? THEN r.balance ELSE 0 END), 0) overdue', [$to])->first();
+
             return [
+                'receivables' => (int) $receivables->outstanding, 'overdue_receivables' => (int) $receivables->overdue,
                 'gross_sales' => $value('sale', 'gross'), 'discounts' => $value('sale', 'discount') - $value('return', 'discount'),
-                'returns' => $value('return', 'gross'), 'net_sales' => $net, 'collections' => $value('sale', 'total'),
-                'refunds' => $value('return', 'total'), 'net_payments' => $net, 'cost_of_goods' => $cost,
+                'returns' => $value('return', 'gross'), 'net_sales' => $net, 'collections' => $collections,
+                'refunds' => $refunds, 'net_payments' => $collections - $refunds, 'cost_of_goods' => $cost,
                 'gross_profit' => $net - $cost, 'expenses' => $expense, 'inventory_losses' => $loss,
                 'operating_estimate' => $net - $cost - $expense - $loss, 'inventory_gains' => Amounts::ratio((int) $rows->sum('gain'), 1, 10000),
                 'inventory_value' => Amounts::ratio((int) $inventory, 1, 10000), 'sale_count' => $value('sale', 'count'),
