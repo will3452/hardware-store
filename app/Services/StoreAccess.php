@@ -19,10 +19,11 @@ final class StoreAccess
         'purchasing' => ['catalog', 'inventory'], 'expenses' => ['cash'],
     ];
 
-    public const PERMISSIONS = ['platform.portal.access', 'platform.stores.manage', 'platform.modules.manage', 'platform.announcements.manage', 'platform.reports.read', 'platform.reports.export', 'platform.audit.read'];
+    public const PERMISSIONS = ['platform.portal.access', 'platform.stores.manage', 'platform.stores.view', 'platform.modules.manage', 'platform.announcements.manage', 'platform.reports.read', 'platform.reports.export', 'platform.audit.read'];
 
     public function lock(User $actor): Store
     {
+        abort_if(app(StoreContext::class)->isReadOnly(), 403, 'Administrator store viewing is read-only.');
         $store = Store::whereKey(app(StoreContext::class)->id())->lockForUpdate()->firstOrFail();
         abort_unless($store->status === 'active' && $actor->fresh()?->status === 'active'
             && StoreMembership::where('store_id', $store->id)->where('user_id', $actor->id)
@@ -40,7 +41,7 @@ final class StoreAccess
 
     public function history(string $module): void
     {
-        if ($module === 'reports') {
+        if ($module === 'reports' && ! app(StoreContext::class)->isReadOnly()) {
             $this->module('reports');
         }
     }

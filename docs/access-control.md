@@ -121,3 +121,16 @@ Resolve store context through authenticated middleware and current membership; u
 Keep any global scope bypass inside named platform services that demand explicit platform permission. Reauthorize every Livewire action and related resource ID, including hydrated component properties. Validate unique values within the current store. Job middleware must establish scope and clear it on success or failure before the next queued job.
 
 Disable Hostinger or LiteSpeed full-page caching on authentication, admin, store, Livewire, and private response paths. Store-dependent application cache keys include verified store identity. Add integration cases for cache leakage, unscoped validation, raw query paths, Livewire ID substitution, and a queue worker processing two stores in sequence.
+
+
+## Administrator store viewing — November 3, 2026
+
+`platform.stores.view` grants read-only inspection through `/admin/stores/{store}/view`. Existing full administrators with all seven previous platform permissions receive this grant in the additive permission migration. Limited administrators and owners receive no additional grants. Newly bootstrapped full administrators include this permission. It is separate from store management, reporting export, and owner membership.
+
+Every request requires an active verified account, platform portal access, current session MFA proof, and the view grant. The administrator retains their own identity. No owner password, impersonation, new membership, or session-wide store switch is used. Active, pending, suspended, and archived stores can be inspected. Owner lifecycle and module restrictions continue to apply to owner routes; the administrator can inspect historical data and reports even when a store module is disabled.
+
+Only explicit GET/HEAD viewing routes exist. Store mutation forms are omitted, the inspection middleware rejects unsafe methods, mutation services reject the read-only context, and tenant-model saves/deletes also reject it. Direct owner routes retain their active-owner checks. An administrator who independently owns a store may still use their separate owner workspace; read-only mode never leaks between tabs/requests.
+
+Products, inventory/movements, suppliers/orders/receipts, sales/returns, expenses, cash sessions, reports, activity, profile, and supporting attachments remain scoped to the selected store. Mixing a document/order/session/attachment ID from another store returns not found. Filters, pagination, detail links, and attachment links stay within the admin route family. CSV downloads additionally require `platform.reports.export`; report and cash exports retain explicit store scope during streaming.
+
+Each successful view or download request creates `platform.store_viewed` with the real admin ID, store, route/page, subject ID, and export flag. This records access, not proof that a streamed download finished. Existing report-export audit events remain. Private responses are not cached. Store context is cleared after successful and failed requests.

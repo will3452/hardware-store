@@ -68,7 +68,7 @@ class OperationsController extends Controller
             $data['lowStock'] = Product::where('active', true)->whereColumn('quantity_micro', '<=', 'reorder_micro')->orderBy('name')->limit(10)->get();
             $data['productCount'] = Product::count();
         }
-        if (in_array($page, ['overview', 'reports']) && ($data['modules']['reports'] ?? null) === 'enabled') {
+        if (in_array($page, ['overview', 'reports']) && ($this->context->isReadOnly() || ($data['modules']['reports'] ?? null) === 'enabled')) {
             $request->validate(['from' => ['nullable', 'date_format:Y-m-d'], 'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from']]);
             $data['from'] = $request->input('from', now()->timezone($data['store']->timezone)->format('Y-m-d'));
             $data['to'] = $request->input('to', $data['from']);

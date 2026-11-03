@@ -4,8 +4,8 @@
     $next = session('product_next', []);
     $selectedUnit = $createOld ? old('base_unit', 'piece') : ($next['base_unit'] ?? 'piece');
 @endphp
-<div class="hms-top"><div><h2>Products</h2><p>Add a name, choose how you sell it, and set the price. We’ll generate the SKU.</p></div></div>
-@if(($modules['catalog'] ?? null) === 'enabled')
+<div class="hms-top"><div><h2>Products</h2><p>{{ $readOnly ? 'Browse product details, selling units, and stock levels.' : 'Add a name, choose how you sell it, and set the price. We’ll generate the SKU.' }}</p></div></div>
+@if(!$readOnly && ($modules['catalog'] ?? null) === 'enabled')
 <details class="hms-card" id="add-product" @if($products->isEmpty() || $createOld || $next) open @endif>
     <summary>Add a product</summary>
     <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-5 mt-5"
@@ -40,10 +40,10 @@
 </details>
 @endif
 <form class="hms-search" method="GET"><input name="q" value="{{ request('q') }}" placeholder="Search product, SKU, or barcode" aria-label="Search products"><button class="hms-secondary">Search</button></form>
-<div class="hms-table-wrap"><table><thead><tr><th>Product</th><th>Price / unit</th><th>On hand</th><th>Status</th><th>Manage</th></tr></thead><tbody>
+<div class="hms-table-wrap"><table><thead><tr><th>Product</th><th>Price / unit</th><th>On hand</th><th>Status</th><th>Details</th></tr></thead><tbody>
 @forelse($products as $product)
 <tr><td><strong>{{ $product->name }}</strong><small>{{ $product->sku }}{{ $product->brand ? ' · '.$product->brand : '' }}{{ $product->category ? ' · '.$product->category : '' }}</small></td><td>{{ number_format($product->price_minor / 100, 2) }} / {{ $product->base_unit }}</td><td>{{ App\Support\Amounts::quantity($product->quantity_micro) }}</td><td>{{ $product->active ? 'Active' : 'Archived' }}</td><td><a href="#product-{{ $product->id }}" x-data @click="document.getElementById('product-{{ $product->id }}').open = true">Details ↓</a></td></tr>
-@empty<tr><td colspan="5">No products found. Add a product to get started.</td></tr>@endforelse
+@empty<tr><td colspan="5">No products found.</td></tr>@endforelse
 </tbody></table></div>{{ $products->links() }}
 @foreach($products as $product)
 @php
@@ -54,7 +54,8 @@
     <summary>{{ $product->name }} · {{ $product->sku }}</summary>
     <div class="space-y-5 mt-5">
         <p>Selling units: @foreach($units[$product->id] ?? [] as $unit)<span class="hms-badge">{{ $unit->label }} = {{ App\Support\Amounts::quantity($unit->factor_micro) }} {{ $product->base_unit }}</span> @endforeach</p>
-        @if(($modules['catalog'] ?? null) === 'enabled')
+        @if($readOnly)<p>Barcode: {{ $product->barcode ?: '—' }} · Low-stock alert: {{ App\Support\Amounts::quantity($product->reorder_micro) }} {{ $product->base_unit }}</p>@endif
+        @if(!$readOnly && ($modules['catalog'] ?? null) === 'enabled')
         <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-4">
             @csrf<input type="hidden" name="_form" value="product-{{ $product->id }}"><input type="hidden" name="product_id" value="{{ $product->id }}"><input type="hidden" name="base_unit" value="{{ $product->base_unit }}"><input type="hidden" name="fractional" value="{{ (int) $product->fractional }}">
             <div class="hms-grid three">

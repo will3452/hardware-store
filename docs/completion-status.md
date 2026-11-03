@@ -6,7 +6,7 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 | Workflow | Delivered |
 | --- | --- |
-| Platform | Store/address registration, owner activation/recovery, lifecycle, module controls/dependencies, targeted/scheduled announcements, audit, centralized store/currency reports |
+| Platform | Audited read-only store inspection, store/address registration, owner activation/recovery, lifecycle, module controls/dependencies, targeted/scheduled announcements, audit, centralized store/currency reports |
 | Products | Short registration form, generated SKUs, reusable category/brand labels, duplicate prevention, fixed unit conversions, archive/reactivate |
 | Inventory | Reviewed opening balances/costs, counts, damage/loss, low-stock visibility, permanent movements, stale-count protection |
 | Purchasing | Supplier maintenance/archive, editable drafts with revision checks, place, partial/full receiving, short close/cancel, eligible receipt reversal |
@@ -17,7 +17,7 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 
 ## Validation evidence
 
-- `composer test`: **104 tests, 624 assertions**, including PHPStan and Pint; MySQL integration and separate-process concurrency tests pass.
+- `composer test`: **115 tests, 853 assertions**, including PHPStan and Pint; MySQL integration and separate-process concurrency tests pass.
 - `npm run build`: production assets built successfully without a production Node process.
 - Browser walkthrough with local synthetic data: scan item, cash/e-wallet split totaling PHP 300 against PHP 285, PHP 15 change, committed record; create a purchase draft and edit quantity without changing stock; cash-session reconciliation and 360px cash and checkout layouts.
 - Local restore rehearsal: compressed development database imported into a separate recovery database. Restored 1 synthetic store, 4 products, 6 documents, and 11 audit events. Stock/cash discrepancies and orphaned document/attachment/membership relationships: **zero**. Private archive extracted; matching local environment retained. This small fixture is not a production-size or per-store selective recovery drill.
@@ -28,6 +28,8 @@ Independent hardware businesses, one owner per store, online operation, Laravel,
 - Automatic scheduler execution confirmed: hPanel invoked the private `scheduler.sh` wrapper at **2026-11-02 03:17:01 UTC / 11:17:01 Asia/Manila**. The heartbeat and bounded queue task completed successfully; no manual scheduler execution was used as this evidence. Daily backup is scheduled for 02:00 Asia/Manila.
 
 - SMTP extension deployed November 3: invitations, account recovery/verification/security notices, optional announcement emails, and administrator delivery tracking. An explicitly approved test was automatically accepted by Hostinger SMTP at 13:42:07 Asia/Manila on its first attempt. Inbox placement was not independently inspected. See [SMTP email](smtp-email.md).
+
+- Administrator store viewing adds an explicit read-only workspace with per-request MFA/permission checks, scoped record access, separate export permission, and access audit events. Existing full admins receive the view permission; limited roles do not.
 
 ## Boundaries for daily use
 

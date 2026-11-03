@@ -1,3 +1,12 @@
+# Read-only administrator store viewing — November 3, 2026
+
+- Added **View store** on the platform store list and management page. Administrators keep their own identity and see a prominent read-only banner with a return link.
+- Reused store screens for products, stock/movements, suppliers/orders/receipts, sales/returns, expenses, cash sessions, reports, activity, profile, and private attachments. Navigation, filters, and record links retain the explicit administrator view.
+- Added `platform.stores.view`; the permission migration grants existing full administrators only. Limited roles and owner memberships are unchanged. Every view requires platform MFA and current authorization. CSV exports additionally require reporting-export permission.
+- Omitted mutation forms and enforced read-only access at the route, middleware, service, and tenant-model boundaries. Suspended/archived stores and disabled modules remain inspectable without enabling owner operations.
+- Recorded `platform.store_viewed` for each successful access under the administrator's real identity. Cross-store resource mismatches are rejected and context is cleared after success/failure.
+- Validation: **115 tests / 853 assertions**, including 11 administrator-view integration tests; PHPStan, Pint, Blade compilation, and production build pass. The synthetic-data browser preview confirms the banner, read-only product details, and administrator navigation.
+
 # SMTP account and announcement email — November 3, 2026
 
 - Added a durable encrypted email outbox for owner invitations, password recovery, email verification, profile email changes, and password/two-factor security notices. Branded HTML and plain-text messages share the Pyesio style.

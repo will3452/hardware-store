@@ -45,6 +45,8 @@ Hostinger's Web and Cloud database service uses MariaDB internally. The applicat
 
 The Admin Portal supports store registration, owner activation/replacement, lifecycle, module access, announcements, and centralized reports. The Store Portal supports products and unit conversions, opening stock and counts, purchasing/partial receiving, paid sales and returns, cash sessions, expenses/reversals, private attachments, reports, and CSV exports. Authentication, MFA, tenant checks, atomic posting, and audit recording apply throughout.
 
+Full administrators can use **View store** to inspect a store workspace with read-only access and an audit trail.
+
 Use the [user guide](docs/user-guide.md) to set up a store today. Printouts are internal sales records; tax calculation and fiscal invoicing remain unconfigured. Account emails and optional announcement emails use a tracked SMTP outbox, with private activation/recovery links available as a fallback. See [SMTP setup and delivery](docs/smtp-email.md). See [release notes](docs/release-notes.md) for precise scope and verification boundaries.
 
 ## Local development

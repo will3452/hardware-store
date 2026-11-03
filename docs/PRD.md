@@ -268,3 +268,8 @@ Release requires all first-release functional acceptance criteria, the critical 
 Detailed entity constraints belong in the [data model](data-model.md). Screen and state behavior belongs in [workflows](workflows.md). Authentication and entitlement enforcement belongs in [access control](access-control.md). The [architecture](architecture.md) defines the Laravel implementation baseline; remaining service and hosting details are recorded in the decision register.
 
 Laravel and the Hostinger hPanel deployment family are user-confirmed choices. The [Hostinger deployment guide](hostinger-deployment.md) governs environment verification, public directory placement, assets, queues, and release operations. Actual account capacity must be measured against the quality targets; the plan name alone does not establish production readiness.
+
+
+## Administrator inspection increment
+
+The November 3 release adds **View store** to the platform store list and management screen. Authorized administrators inspect the store workspace with a persistent read-only banner, unchanged admin identity, per-request audit events, store-scoped records, and server-side write protection. This includes historical inspection of suspended/archived stores. Export remains a separate permission. See [access control](access-control.md) for the implemented boundary.

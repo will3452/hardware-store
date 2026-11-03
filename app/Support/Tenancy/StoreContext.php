@@ -9,9 +9,12 @@ final class StoreContext
 {
     private ?Store $store = null;
 
-    public function set(Store $store): void
+    private bool $readOnly = false;
+
+    public function set(Store $store, bool $readOnly = false): void
     {
         $this->store = $store;
+        $this->readOnly = $readOnly;
     }
 
     public function store(): Store
@@ -24,8 +27,14 @@ final class StoreContext
         return (string) $this->store()->getKey();
     }
 
+    public function isReadOnly(): bool
+    {
+        return $this->readOnly;
+    }
+
     public function clear(): void
     {
         $this->store = null;
+        $this->readOnly = false;
     }
 }

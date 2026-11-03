@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
@@ -30,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        \Illuminate\Support\Facades\View::composer(['operations.*', 'components.store-screen'], function (View $view): void {
+            $readOnly = app(StoreContext::class)->isReadOnly();
+            $view->with('readOnly', $readOnly);
+            $view->with('canExport', ! $readOnly || auth()->user()?->hasPlatformPermission('platform.reports.export'));
+        });
 
         if ($publicPath = config('app.public_path')) {
             $this->app->usePublicPath($publicPath);

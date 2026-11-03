@@ -1,6 +1,11 @@
 <x-store-screen :store="$store" :page="$page" :modules="$modules">
+@if($readOnly)
+<section class="hms-card space-y-4"><h2>Store contact details</h2><dl class="hms-grid">@foreach(['address_line_1' => 'Address', 'address_line_2' => 'Address line 2', 'city' => 'City', 'province' => 'Province', 'postal_code' => 'Postal code', 'contact_email' => 'Contact email', 'contact_phone' => 'Phone'] as $field => $label)<div><dt>{{ $label }}</dt><dd>{{ $store->$field ?: '—' }}</dd></div>@endforeach</dl></section>
+<section class="hms-card space-y-3"><h2>Accepted checkout payments</h2><p>{{ implode(', ', $store->acceptedPayments()) }}</p></section>
+@else
 <form method="POST" action="{{ route('store.profile.save', $store->id) }}" class="hms-card space-y-4">@csrf<h2>Store contact details</h2><p>{{ $store->display_name }} · {{ $store->code }} · {{ $store->currency }}</p><div class="hms-grid">@foreach(['address_line_1' => 'Address', 'address_line_2' => 'Address line 2', 'city' => 'City', 'province' => 'Province', 'postal_code' => 'Postal code', 'contact_email' => 'Contact email', 'contact_phone' => 'Phone'] as $field => $label)<x-field :name="$field" :label="$label" :value="$store->$field" :required="in_array($field, ['address_line_1', 'city'])"/>@endforeach</div><button class="hms-primary">Save contact details</button></form>
 <form method="POST" action="{{ route('store.payments.settings', $store->id) }}" class="hms-card space-y-4">@csrf<h2>Accepted checkout payments</h2><p>Select the methods customers can use for new sales. Noncash payments require a reference and confirmation. Historical refunds and expense corrections remain available.</p>
 @foreach(App\Models\Store::PAYMENT_METHODS as $method => $label)<label class="hms-check"><input type="checkbox" name="checkout_methods[]" value="{{ $method }}" @checked(in_array($method, old('checkout_methods', array_keys($store->acceptedPayments()))))> {{ $label }}</label>@endforeach
 <button class="hms-primary">Save payment methods</button><p class="hms-help">Keep at least one method selected. The app records confirmed payments; it does not process charges.</p></form>
+@endif
 </x-store-screen>

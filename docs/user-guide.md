@@ -80,3 +80,10 @@ Registering a store or creating an owner invitation queues an activation email. 
 Admins can open **Email delivery** to review pending, sending, sent, failed, or cancelled messages. Sent means accepted by the mail server. Automatic retries run in the background; an eligible failed delivery can be retried without creating a new account link. Expired links require a new invitation or recovery request. **Send test to my email** sends only to your signed-in account address.
 
 Announcements stay in the portal unless **Also email active store owners when published** is selected. Email recipients are current active owners when the scheduler first processes publication. Withdrawing prevents unsent messages. See [SMTP email](smtp-email.md) for timing and recovery details.
+
+
+## View inside a store as administrator
+
+Open **Admin Portal → Stores & reports → View store**, or use **View store** from the store's Manage page. The banner says **Viewing as administrator · Read-only** and shows your own signed-in identity. Browse the store's products, inventory, purchases, sales history, cash, expenses, reports, activity, and profile. Open records and supporting attachments from their history pages. Use **Back to Admin Portal** or **Choose another store** to leave the view.
+
+Your visits are recorded in the audit trail. Posting, editing, stock adjustments, refunds, receiving, drawer changes, and attachment uploads are unavailable in this view. CSV buttons appear only with export permission. Full administrators receive viewing access automatically; a limited admin needs the separate store-view permission. Suspended and archived stores remain available for historical inspection.

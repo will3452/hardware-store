@@ -16,6 +16,9 @@ trait BelongsToStore
         });
 
         static::saving(function (Model $model): void {
+            if (app(StoreContext::class)->isReadOnly()) {
+                throw new AuthorizationException('Administrator store viewing is read-only.');
+            }
             $storeId = app(StoreContext::class)->id();
 
             if ($model->getAttribute('store_id') !== null && $model->getAttribute('store_id') !== $storeId) {
@@ -30,6 +33,9 @@ trait BelongsToStore
         });
 
         static::deleting(function (Model $model): void {
+            if (app(StoreContext::class)->isReadOnly()) {
+                throw new AuthorizationException('Administrator store viewing is read-only.');
+            }
             if ($model->getOriginal('store_id') !== app(StoreContext::class)->id()) {
                 throw new AuthorizationException('The resource does not belong to the selected store.');
             }

@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsurePlatformAdministrator;
 use App\Http\Middleware\PrivatePortalResponse;
 use App\Http\Middleware\ResolveStoreContext;
 use App\Http\Middleware\ThrottleAccountRecovery;
+use App\Http\Middleware\ViewStoreAsAdministrator;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'platform.admin' => EnsurePlatformAdministrator::class,
             'store.context' => ResolveStoreContext::class,
+            'store.admin-view' => ViewStoreAsAdministrator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

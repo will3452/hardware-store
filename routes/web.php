@@ -18,6 +18,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->middleware('platform.admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('dashboard');
         Route::post('stores', [AdminController::class, 'create'])->name('stores.create');
+        Route::prefix('stores/{store}/view')->middleware('store.admin-view')->name('stores.view.')->group(function () {
+            Route::get('/', [OperationsController::class, 'page'])->name('dashboard');
+            Route::get('workspace/{page}', [OperationsController::class, 'page'])->name('page');
+            Route::get('documents/{document}', [OperationsController::class, 'document'])->name('document');
+            Route::get('purchases/{order}', [OperationsController::class, 'order'])->name('order');
+            Route::get('cash-sessions/{cashSession}', [CashReportController::class, 'show'])->name('cash.show');
+            Route::get('attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
+        });
         Route::get('stores/{store}', [AdminController::class, 'show'])->name('stores.show');
         Route::post('stores/{store}', [AdminController::class, 'update'])->name('stores.update');
         Route::post('stores/{store}/recovery', [AdminController::class, 'recovery'])->middleware('throttle:5,1')->name('stores.recovery');
