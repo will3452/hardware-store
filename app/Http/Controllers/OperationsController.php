@@ -23,6 +23,7 @@ use App\Services\ProductCatalog;
 use App\Services\Purchasing;
 use App\Services\Reports;
 use App\Services\StoreAccess;
+use App\Services\StoreOnboarding;
 use App\Support\Amounts;
 use App\Support\RecordPage;
 use App\Support\Tenancy\StoreContext;
@@ -64,6 +65,7 @@ class OperationsController extends Controller
             $data['units'] = ProductUnit::whereIn('product_id', $data['products']->pluck('id'))->get()->groupBy('product_id');
         }
         if ($page === 'overview') {
+            $data['onboarding'] = app(StoreOnboarding::class)->progress();
             $data['announcements'] = Announcement::whereNotNull('publish_at')->where('publish_at', '<=', now())->whereNull('withdrawn_at')
                 ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->where(fn ($q) => $q->whereNull('store_ids')->orWhereJsonContains('store_ids', $store))->latest('publish_at')->limit(20)->get();

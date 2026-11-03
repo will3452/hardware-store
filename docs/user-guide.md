@@ -16,6 +16,16 @@ Enabled modules permit new work. Restricted modules preserve history and linked 
 
 For announcements, choose all stores or selected stores. A blank publication time creates a draft. **Publish now**, scheduled publication, expiration, and withdrawal control visibility. Date/time inputs use Asia/Manila.
 
+## Setup checklist for new stores
+
+Open **Store Portal → Overview → Set up your store**. The checklist shows completed steps, a progress bar, and a next-step button. Use **Setup checklist** at the top of other store screens to return after saving.
+
+With the core modules enabled, it covers reviewing and saving contact details, saving accepted payment methods, adding the first product, recording opening stock or a received purchase, opening the first cash drawer, and posting the first real sale. Merely visiting a screen does not complete a step. The checklist follows the store’s enabled modules, and existing records receive credit automatically.
+
+Progress belongs to the store and is calculated from its saved records and profile/payment audit events. It does not reset at sign-out, when stock sells out, or when a drawer closes. The checklist is guidance; it never blocks work or asks you to create a sample sale. It starts expanded for stores that have not made a sale and still have setup steps, then becomes a compact summary after the first sale or completion. Click its heading to expand or collapse it.
+
+An administrator can inspect the same progress through **View store**. All checklist links stay in that read-only store view; the administrator cannot complete owner actions there.
+
 ## Prepare a store for its first sale
 
 1. Open **Store Portal**, then select the store.

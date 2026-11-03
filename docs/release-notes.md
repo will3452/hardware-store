@@ -1,3 +1,11 @@
+# Store onboarding checklist — November 3, 2026
+
+- Replaced the static Overview setup links with a collapsible checklist, progress count/bar, automatic completed states, and a next-step action. With core modules enabled it covers contact details, accepted payments, first product, starting stock, first cash drawer, and first real sale.
+- Progress uses existing store-scoped operational records and profile/payment audit events. Only enabled features count; opening stock or purchase receiving satisfies the stock milestone. Archived products, closed cash sessions, and sold-out stock retain historical milestone credit.
+- New stores see expanded guidance. Completed stores and stores with a previous sale see a compact summary. Other store screens link back to the checklist; contact and payment links target their exact form sections. No manual tick-off, forced sequence, sample sale, account reset, or new schema is needed.
+- Admin View store displays the same progress with read-only links and no owner mutation controls.
+- Validation: **125 tests / 963 assertions**, Pint, PHPStan, Blade compilation, and frontend build. New checks cover the full owner workflow, rejected input, existing receiving, tenant isolation, module changes, historical milestones, and admin permissions. Desktop/mobile previews cover new, partial, completed, and dark appearance states.
+
 # Easier record browsing — November 3, 2026
 
 - Record lists default to 10 rows, with 25/50-row choices, counts, previous/next controls at both ends, and direct page jumping. Query filters survive navigation; links return to the relevant section. Desktop tables have a bounded scroll area with sticky headings; mobile keeps native horizontal table scrolling. Printing removes the height limit for the current page.

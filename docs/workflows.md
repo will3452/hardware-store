@@ -35,7 +35,8 @@ Hide unavailable new-work actions and explain restrictions on historical documen
 4. The store detail shows Pending Activation and delivery state. A failed email can be retried without recreating the store.
 5. Owner opens the invitation, authenticates or sets their password, and accepts the intended store membership.
 6. The server consumes the invitation once, activates the membership and store, and records the activation.
-7. The owner sees setup tasks: verify profile, create products and units, configure confirmed payment methods, enter opening stock or receive purchases, and open a cash session.
+7. The owner sees a setup checklist on Overview: save reviewed contact details, save accepted payment methods, add the first product, record opening stock or a received purchase, open the first cash session, and post the first real paid sale. Progress is derived from store-scoped records and owner profile/payment audit events. Only enabled features count. A next-step link leads to the relevant screen; other store pages link back to the checklist.
+8. Completed milestones persist through stock depletion, drawer closing, and sign-out. The checklist becomes compact after completion or the first sale, can be reopened, and never blocks operations. Administrator store viewing shows the same progress with read-only navigation.
 
 Expired invitation: show expiry and the recovery path without revealing an invitation secret. Resend: revoke the earlier token and send a new invitation for the same pending store. Duplicate browser submission: return the existing store. Incomplete provisioning: no operational access is possible until the entire provisioning operation is valid.
 

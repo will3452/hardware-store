@@ -204,6 +204,29 @@ body:has(.hms-record-dialog[open]) { overflow: hidden; }
 .hms-steps li::marker { color: #a74c00; font-weight: 700; }
 .dark .hms-steps li::marker { color: #ffad66; }
 .hms-steps span { display: block; font-size: .75rem; color: var(--pyesio-muted); }
+.hms-onboarding { scroll-margin-top: 1rem; border-top: 3px solid var(--pyesio-orange); }
+.hms-onboarding-summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; list-style: none; }
+.hms-onboarding-summary::-webkit-details-marker { display: none; }
+.hms-onboarding-title { display: block; font-size: 1.2rem; letter-spacing: -.025em; margin-bottom: .3rem; }
+.hms-onboarding-summary .hms-eyebrow { margin-bottom: .3rem; }
+.hms-onboarding-summary-end { display: flex; align-items: center; gap: 1rem; flex: none; }
+.hms-onboarding-toggle { font-size: 1.4rem; line-height: 1; }
+.hms-onboarding[open] .hms-onboarding-toggle { transform: rotate(180deg); }
+.hms-onboarding-body { display: grid; gap: 1rem; margin-top: 1.25rem; }
+.hms-onboarding-progress { appearance: none; display: block; width: 100%; height: .5rem; border: 0; border-radius: 1rem; overflow: hidden; background: var(--pyesio-soft); color: var(--pyesio-orange); }
+.hms-onboarding-progress::-webkit-progress-bar { background: var(--pyesio-soft); }
+.hms-onboarding-progress::-webkit-progress-value { background: var(--pyesio-orange); }
+.hms-onboarding-progress::-moz-progress-bar { background: var(--pyesio-orange); }
+.hms-onboarding-next { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 1.25rem; background: var(--pyesio-tint); border: 1px solid #eda96e; border-radius: .7rem; }
+.hms-onboarding-next .hms-eyebrow { margin-bottom: .3rem; }
+.hms-onboarding-next p { font-size: .8rem; margin-top: .3rem; }
+.hms-onboarding-next > a { flex: none; }
+.hms-onboarding-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; }
+.hms-onboarding-steps li { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem 0; border-top: 1px solid var(--pyesio-border); min-width: 0; }
+.hms-onboarding-steps a { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.hms-onboarding-marker { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; background: var(--pyesio-soft); border: 1px solid var(--pyesio-border); border-radius: 50%; font-size: .75rem; }
+.hms-onboarding-steps .is-complete .hms-onboarding-marker { background: #e4f3e9; border-color: #91bca0; color: #1b6037; }
+.dark .hms-onboarding-steps .is-complete .hms-onboarding-marker { background: #193b2c; border-color: #4f8c66; color: #a2e3b7; }
 /* Brand-led sign-in, activation, recovery, and MFA screens. */
 .pyesio-auth { background: var(--pyesio-page); color: var(--pyesio-text); }
 .pyesio-auth-layout { min-height: 100svh; display: grid; grid-template-columns: 1.1fr 1fr; }
@@ -239,6 +262,8 @@ body:has(.hms-record-dialog[open]) { overflow: hidden; }
     .pyesio-auth-mobile-logo { display: block; width: min(280px, 100%); margin-bottom: 1.75rem; background: #fff; border-radius: .8rem; padding: .5rem; }
 }
 @media(max-width: 640px) {
+    .hms-onboarding-steps { grid-template-columns: 1fr; }
+    .hms-onboarding-next { flex-direction: column; align-items: stretch; padding: 1rem; }
     .hms-record-controls > p { flex-basis: 100%; }
     .hms-record-pages { flex-wrap: wrap; }
     .hms-record-dialog > header { padding: 1rem; }
