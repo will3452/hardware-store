@@ -122,7 +122,7 @@ class ProductRegistrationTest extends TestCase
         @$dom->loadHTML($response->getContent());
         $xpath = new \DOMXPath($dom);
         $this->assertSame('Unsaved nails', $xpath->evaluate('string(//details[@id="add-product"]//input[@name="name"]/@value)'));
-        $this->assertSame('Claw hammer, 16 oz', $xpath->evaluate('string(//details[@id="product-'.$product->id.'"]//input[@name="name"]/@value)'));
+        $this->assertSame('Claw hammer, 16 oz', $xpath->evaluate('string(//dialog[@id="product-'.$product->id.'"]//input[@name="name"]/@value)'));
         $this->assertSame(1, $xpath->query('//details[@id="add-product"][@open]')->length);
     }
 

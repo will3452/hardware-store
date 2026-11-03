@@ -6,7 +6,7 @@
 @endphp
 <div class="hms-top"><div><h2>Products</h2><p>{{ $readOnly ? 'Browse product details, selling units, and stock levels.' : 'Add a name, choose how you sell it, and set the price. We’ll generate the SKU.' }}</p></div></div>
 @if(!$readOnly && ($modules['catalog'] ?? null) === 'enabled')
-<details class="hms-card" id="add-product" @if($products->isEmpty() || $createOld || $next) open @endif>
+<details class="hms-card" id="add-product" @if(($products->total() === 0 && !request()->filled('q')) || $createOld || $next) open @endif>
     <summary>Add a product</summary>
     <form method="POST" action="{{ route('store.products.save', $store->id) }}" class="space-y-5 mt-5"
           x-data="hmsProductForm(@js($sellingUnits), @js($selectedUnit))" @submit="submit($event)" @pageshow.window="busy = false"
@@ -39,19 +39,19 @@
     </form>
 </details>
 @endif
-<form class="hms-search" method="GET"><input name="q" value="{{ request('q') }}" placeholder="Search product, SKU, or barcode" aria-label="Search products"><button class="hms-secondary">Search</button></form>
-<div class="hms-table-wrap"><table><thead><tr><th>Product</th><th>Price / unit</th><th>On hand</th><th>Status</th><th>Details</th></tr></thead><tbody>
+<form class="hms-search" method="GET" action="{{ request()->url() }}#products"><x-query-fields :except="['q', 'page']"/><input name="q" value="{{ request('q') }}" placeholder="Search product, SKU, or barcode" aria-label="Search products"><button class="hms-secondary">Search</button></form>
+<x-record-list :records="$products" id="products" label="Products">
+<div class="hms-table-wrap" tabindex="0" role="region" aria-label="Scrollable records"><table><thead><tr><th>Product</th><th>Price / unit</th><th>On hand</th><th>Status</th><th>Details</th></tr></thead><tbody>
 @forelse($products as $product)
-<tr><td><strong>{{ $product->name }}</strong><small>{{ $product->sku }}{{ $product->brand ? ' · '.$product->brand : '' }}{{ $product->category ? ' · '.$product->category : '' }}</small></td><td>{{ number_format($product->price_minor / 100, 2) }} / {{ $product->base_unit }}</td><td>{{ App\Support\Amounts::quantity($product->quantity_micro) }}</td><td>{{ $product->active ? 'Active' : 'Archived' }}</td><td><a href="#product-{{ $product->id }}" x-data @click="document.getElementById('product-{{ $product->id }}').open = true">Details ↓</a></td></tr>
+<tr><td><strong>{{ $product->name }}</strong><small>{{ $product->sku }}{{ $product->brand ? ' · '.$product->brand : '' }}{{ $product->category ? ' · '.$product->category : '' }}</small></td><td>{{ number_format($product->price_minor / 100, 2) }} / {{ $product->base_unit }}</td><td>{{ App\Support\Amounts::quantity($product->quantity_micro) }}</td><td>{{ $product->active ? 'Active' : 'Archived' }}</td><td><button type="button" class="hms-secondary" x-data @click="document.getElementById('product-{{ $product->id }}').showModal()" aria-haspopup="dialog" aria-controls="product-{{ $product->id }}">{{ !$readOnly && ($modules['catalog'] ?? null) === 'enabled' ? 'Details / edit' : 'Details' }}</button></td></tr>
 @empty<tr><td colspan="5">No products found.</td></tr>@endforelse
-</tbody></table></div>{{ $products->links() }}
+</tbody></table></div></x-record-list>
 @foreach($products as $product)
 @php
     $editOld = old('_form') === 'product-'.$product->id;
     $unitOld = old('_form') === 'unit-'.$product->id;
 @endphp
-<details class="hms-card" id="product-{{ $product->id }}" @if($editOld || $unitOld) open @endif>
-    <summary>{{ $product->name }} · {{ $product->sku }}</summary>
+<x-record-dialog :id="'product-'.$product->id" :title="$product->name.' · '.$product->sku" :reopen="$editOld || $unitOld">
     <div class="space-y-5 mt-5">
         <p>Selling units: @foreach($units[$product->id] ?? [] as $unit)<span class="hms-badge">{{ $unit->label }} = {{ App\Support\Amounts::quantity($unit->factor_micro) }} {{ $product->base_unit }}</span> @endforeach</p>
         @if($readOnly)<p>Barcode: {{ $product->barcode ?: '—' }} · Low-stock alert: {{ App\Support\Amounts::quantity($product->reorder_micro) }} {{ $product->base_unit }}</p>@endif
@@ -78,6 +78,6 @@
         </form>
         @endif
     </div>
-</details>
+</x-record-dialog>
 @endforeach
 </x-store-screen>

@@ -87,3 +87,11 @@ Announcements stay in the portal unless **Also email active store owners when pu
 Open **Admin Portal → Stores & reports → View store**, or use **View store** from the store's Manage page. The banner says **Viewing as administrator · Read-only** and shows your own signed-in identity. Browse the store's products, inventory, purchases, sales history, cash, expenses, reports, activity, and profile. Open records and supporting attachments from their history pages. Use **Back to Admin Portal** or **Choose another store** to leave the view.
 
 Your visits are recorded in the audit trail. Posting, editing, stock adjustments, refunds, receiving, drawer changes, and attachment uploads are unavailable in this view. CSV buttons appear only with export permission. Full administrators receive viewing access automatically; a limited admin needs the separate store-view permission. Suspended and archived stores remain available for historical inspection.
+
+## Finding records without long scrolling
+
+Lists start with 10 records. Use **Rows → Apply** for 25 or 50, **Previous / Next** at either end, or **Go to** to jump to a page. Filters stay selected while paging. Changing row count resets the lists to their first page. Desktop tables scroll inside their panel and keep column headings visible.
+
+Use the search field for products, stores, suppliers, orders, or transaction history. **Jump to** links take you directly to history and report sections. Open **Details / edit** in Products to work on one record; **Close** or Escape takes you back to the same row. Validation errors reopen that product’s dialog.
+
+Page sizes affect only the displayed rows. Report totals and CSV exports still cover the full selected scope. On the Admin Portal, store search filters the directory; report dates and store scope control totals and exports. Printing a list prints the current page; export CSV for a complete report.

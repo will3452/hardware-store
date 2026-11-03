@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EmailDelivery;
 use App\Services\EmailOutbox;
 use App\Services\StoreAccess;
+use App\Support\RecordPage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class EmailController extends Controller
             $query->where('store_id', $request->string('store_id')->toString());
         }
 
-        return view('admin.email', ['deliveries' => $query->latest()->paginate(30)->withQueryString(), 'configured' => $outbox->configured(),
+        return view('admin.email', ['deliveries' => $query->latest()->orderByDesc('id')->paginate(RecordPage::size($request))->withQueryString(), 'configured' => $outbox->configured(),
             'counts' => EmailDelivery::selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status'),
             'lastSent' => EmailDelivery::whereNotNull('sent_at')->latest('sent_at')->first()?->sent_at]);
     }

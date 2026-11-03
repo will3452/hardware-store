@@ -8,6 +8,7 @@ use App\Models\StoreModule;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
+use App\Support\RecordPage;
 use App\Support\Tenancy\StoreContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -42,13 +43,15 @@ class CashReportController extends Controller
             }, 'cash-session-'.$session->id.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
 
-        return DB::transaction(function () use ($session, $storeModel): View {
+        $perPage = RecordPage::size($request);
+
+        return DB::transaction(function () use ($session, $storeModel, $perPage): View {
             $session->refresh();
             $query = CashMovement::where('cash_session_id', $session->id);
             $totals = (clone $query)->selectRaw('COALESCE(SUM(CASE WHEN amount_minor > 0 THEN amount_minor ELSE 0 END), 0) cash_in, COALESCE(SUM(CASE WHEN amount_minor < 0 THEN -amount_minor ELSE 0 END), 0) cash_out')->first();
 
             return view('operations.cash-session', ['store' => $storeModel, 'page' => 'cash', 'modules' => StoreModule::pluck('mode', 'module_key')->all(), 'cashSession' => $session,
-                'cashIn' => (int) $totals?->getAttribute('cash_in'), 'cashOut' => (int) $totals?->getAttribute('cash_out'), 'movements' => $query->orderBy('created_at')->orderBy('id')->paginate(50)]);
+                'cashIn' => (int) $totals?->getAttribute('cash_in'), 'cashOut' => (int) $totals?->getAttribute('cash_out'), 'movements' => $query->orderBy('created_at')->orderBy('id')->paginate($perPage)->withQueryString()]);
         });
     }
 }

@@ -1,4 +1,5 @@
 <x-store-screen :store="$store" :page="$page" :modules="$modules">
+<nav class="hms-section-links no-print" aria-label="On this page"><span>Jump to</span><a href="#transaction-history">Sales history</a></nav>
 @if(!$readOnly && ($modules['sales'] ?? null) === 'enabled')
 @if(!$session)<div class="hms-notice">Open your cash drawer before recording sales. <a class="underline" href="{{ \App\Support\StoreWorkspace::route('store.page', [$store->id, 'cash']) }}">Open cash session →</a></div>@endif
 <form method="POST" action="{{ route('store.post', [$store->id, 'sale']) }}" x-data="hmsCart(@js(route('store.catalog', $store->id)), 'sale', @js($oldCart), @js(old('payments', [])), @js($store->acceptedPayments()))" @submit="submit($event)" @pageshow.window="busy = false" class="space-y-5">

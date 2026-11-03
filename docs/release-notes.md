@@ -1,3 +1,13 @@
+# Easier record browsing — November 3, 2026
+
+- Record lists default to 10 rows, with 25/50-row choices, counts, previous/next controls at both ends, and direct page jumping. Query filters survive navigation; links return to the relevant section. Desktop tables have a bounded scroll area with sticky headings; mobile keeps native horizontal table scrolling. Printing removes the height limit for the current page.
+- Added pagination for the store directory, suppliers, and current cash movements. Added directory, supplier, and purchase-order searches. Independent lists retain their own page/filter parameters. Purchase-order supplier choices still include every active supplier.
+- Product detail/edit dialogs replace the repeated cards below the catalog. Closing or pressing Escape restores focus to the triggering row; failed edits reopen with errors and retained input. Read-only admin views continue to omit write forms.
+- Shortcuts reach sales/expense history, inventory movements, purchasing sections, cash-session history, and detailed reports without scrolling through entry forms.
+- Report totals, cash reconciliation, and CSV exports cover the full selected scope across pages. The directory search changes only displayed stores; platform reporting retains its explicit store/date scope.
+- Validation: **120 tests / 899 assertions**, Pint, PHPStan, Blade compilation, and frontend build. New regression checks cover page boundaries, tenant scope, preserved filters, supplier choices, product validation, complete cash CSVs, and platform totals across pages. Browser verification used 52 synthetic products at desktop and 390px mobile widths.
+- No database migration, production environment change, or account reset is required.
+
 # Read-only administrator store viewing — November 3, 2026
 
 - Added **View store** on the platform store list and management page. Administrators keep their own identity and see a prominent read-only banner with a return link.

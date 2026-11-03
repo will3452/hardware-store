@@ -15,6 +15,7 @@ use App\Services\RecoverySnapshots;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
+use App\Support\RecordPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -49,8 +50,9 @@ class AdminController extends Controller
 
     public function index(Request $request, Reports $reports): View|StreamedResponse
     {
-        $request->validate(['from' => ['nullable', 'date_format:Y-m-d'], 'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'], 'store_id' => ['nullable', 'ulid', 'exists:stores,id']]);
-        $stores = Store::orderBy('display_name')->get();
+        $request->validate(['store_q' => ['nullable', 'string', 'max:100'], 'from' => ['nullable', 'date_format:Y-m-d'], 'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'], 'store_id' => ['nullable', 'ulid', 'exists:stores,id']]);
+        $perPage = RecordPage::size($request);
+        $stores = Store::orderBy('display_name')->orderBy('id')->get();
         $from = $request->input('from', now()->timezone('Asia/Manila')->format('Y-m-d'));
         $to = $request->input('to', $from);
         StoreAccess::check($to >= $from, 'The end date must follow the start date.');
@@ -86,7 +88,17 @@ class AdminController extends Controller
             }, 'platform-report.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
 
-        return view('admin.index', compact('stores', 'metrics', 'from', 'to'));
+        $directory = Store::orderBy('display_name')->orderBy('id');
+        if ($request->filled('store_q')) {
+            $needle = '%'.addcslashes($request->string('store_q')->toString(), '\\%_').'%';
+            $directory->where(fn ($q) => $q->where('display_name', 'like', $needle)->orWhere('code', 'like', $needle)->orWhere('city', 'like', $needle));
+        }
+        if ($request->filled('store_id')) {
+            $directory->whereKey($request->input('store_id'));
+        }
+        $storeRecords = $directory->paginate($perPage)->withQueryString();
+
+        return view('admin.index', compact('stores', 'storeRecords', 'metrics', 'from', 'to'));
     }
 
     public function create(Request $request, Invitations $invitations): RedirectResponse
@@ -224,7 +236,7 @@ class AdminController extends Controller
     {
         StoreAccess::requirePermission($request->user(), 'platform.announcements.manage');
 
-        return view('admin.announcements', ['announcements' => Announcement::latest()->paginate(20), 'stores' => Store::orderBy('display_name')->get()]);
+        return view('admin.announcements', ['announcements' => Announcement::latest()->orderByDesc('id')->paginate(RecordPage::size($request))->withQueryString(), 'stores' => Store::orderBy('display_name')->get()]);
     }
 
     public function announcement(Request $request): RedirectResponse
@@ -261,6 +273,6 @@ class AdminController extends Controller
     {
         StoreAccess::requirePermission($request->user(), 'platform.audit.read');
 
-        return view('admin.audit', ['events' => AuditEvent::latest('created_at')->paginate(50)]);
+        return view('admin.audit', ['events' => AuditEvent::latest('created_at')->orderByDesc('id')->paginate(RecordPage::size($request))->withQueryString()]);
     }
 }

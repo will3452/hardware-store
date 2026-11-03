@@ -24,6 +24,7 @@ use App\Services\Purchasing;
 use App\Services\Reports;
 use App\Services\StoreAccess;
 use App\Support\Amounts;
+use App\Support\RecordPage;
 use App\Support\Tenancy\StoreContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -43,6 +44,7 @@ class OperationsController extends Controller
     {
         abort_unless(in_array($page, ['overview', 'products', 'inventory', 'purchasing', 'sales', 'cash', 'expenses', 'reports', 'audit', 'profile']), 404);
         $this->access->history($page);
+        $perPage = RecordPage::size($request);
         $data = ['store' => $this->context->store(), 'page' => $page, 'modules' => StoreModule::pluck('mode', 'module_key')->all()];
         $data['session'] = CashSession::whereNull('closed_at')->first();
         if ($page === 'products') {
@@ -53,12 +55,12 @@ class OperationsController extends Controller
         }
         if (in_array($page, ['products', 'inventory'])) {
             $request->validate(['q' => ['nullable', 'string', 'max:100']]);
-            $query = Product::query()->orderBy('name');
+            $query = Product::query()->orderBy('name')->orderBy('id');
             if ($request->filled('q')) {
-                $q = $request->string('q')->toString();
-                $query->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q));
+                $q = addcslashes($request->string('q')->toString(), '\\%_');
+                $query->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $request->string('q')->toString()));
             }
-            $data['products'] = $query->paginate(30)->withQueryString();
+            $data['products'] = $query->paginate($perPage)->withQueryString();
             $data['units'] = ProductUnit::whereIn('product_id', $data['products']->pluck('id'))->get()->groupBy('product_id');
         }
         if ($page === 'overview') {
@@ -74,11 +76,11 @@ class OperationsController extends Controller
             $data['to'] = $request->input('to', $data['from']);
             StoreAccess::check($data['to'] >= $data['from'], 'The end date must follow the start date.');
             $data['generatedAt'] = now();
-            DB::transaction(function () use (&$data, $store, $page): void {
+            DB::transaction(function () use (&$data, $store, $page, $perPage): void {
                 $data['metrics'] = app(Reports::class)->summarize([$store], $data['from'], $data['to'], $data['store']->timezone);
                 if ($page === 'reports') {
-                    $data['performance'] = app(Reports::class)->products($store, $data['from'], $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'performance_page')->withQueryString();
-                    $data['stockReport'] = app(Reports::class)->stock($store, $data['to'], $data['store']->timezone)->paginate(25, ['*'], 'stock_page')->withQueryString();
+                    $data['performance'] = app(Reports::class)->products($store, $data['from'], $data['to'], $data['store']->timezone)->paginate($perPage, ['*'], 'performance_page')->withQueryString();
+                    $data['stockReport'] = app(Reports::class)->stock($store, $data['to'], $data['store']->timezone)->paginate($perPage, ['*'], 'stock_page')->withQueryString();
                 }
             });
             if ($page === 'reports' && in_array($request->input('export'), ['products', 'inventory'], true)) {
@@ -123,11 +125,23 @@ class OperationsController extends Controller
             }
         }
         if ($page === 'inventory') {
-            $data['movements'] = InventoryMovement::latest('created_at')->paginate(25, ['*'], 'movement_page');
+            $data['movements'] = InventoryMovement::latest('created_at')->orderByDesc('id')->paginate($perPage, ['*'], 'movement_page')->withQueryString();
         }
         if ($page === 'purchasing') {
-            $data['suppliers'] = Supplier::orderBy('name')->get();
-            $data['orders'] = PurchaseOrder::latest()->paginate(20, ['*'], 'orders_page');
+            $request->validate(['supplier_q' => ['nullable', 'string', 'max:100'], 'order_q' => ['nullable', 'string', 'max:100']]);
+            $data['supplierChoices'] = Supplier::where('active', true)->orderBy('name')->get(['id', 'name']);
+            $suppliers = Supplier::orderBy('name')->orderBy('id');
+            if ($request->filled('supplier_q')) {
+                $needle = '%'.addcslashes($request->string('supplier_q')->toString(), '\\%_').'%';
+                $suppliers->where(fn ($q) => $q->where('name', 'like', $needle)->orWhere('contact', 'like', $needle));
+            }
+            $data['suppliers'] = $suppliers->paginate($perPage, ['*'], 'suppliers_page')->withQueryString();
+            $orders = PurchaseOrder::latest()->orderByDesc('id');
+            if ($request->filled('order_q')) {
+                $needle = '%'.addcslashes($request->string('order_q')->toString(), '\\%_').'%';
+                $orders->where(fn ($q) => $q->where('id', 'like', $needle)->orWhere('supplier_name', 'like', $needle)->orWhere('notes', 'like', $needle));
+            }
+            $data['orders'] = $orders->paginate($perPage, ['*'], 'orders_page')->withQueryString();
         }
         if (in_array($page, ['sales', 'expenses'])) {
             $kinds = $page === 'sales' ? ['sale', 'return'] : ['expense', 'expense_reversal'];
@@ -146,14 +160,14 @@ class OperationsController extends Controller
             if ($request->filled('history_to')) {
                 $history->where('posted_at', '<', CarbonImmutable::parse($request->input('history_to'), $data['store']->timezone)->addDay()->startOfDay()->utc());
             }
-            $data['documents'] = $history->latest('posted_at')->orderByDesc('id')->paginate(20, ['*'], 'history_page')->withQueryString();
+            $data['documents'] = $history->latest('posted_at')->orderByDesc('id')->paginate($perPage, ['*'], 'history_page')->withQueryString();
         }
         if ($page === 'cash') {
-            $data['sessions'] = CashSession::latest('opened_at')->paginate(20);
-            $data['movements'] = CashMovement::where('cash_session_id', $data['session']?->id)->oldest('created_at')->get();
+            $data['sessions'] = CashSession::latest('opened_at')->orderByDesc('id')->paginate($perPage)->withQueryString();
+            $data['movements'] = CashMovement::where('cash_session_id', $data['session']?->id)->latest('created_at')->orderByDesc('id')->paginate($perPage, ['*'], 'movement_page')->withQueryString();
         }
         if ($page === 'audit') {
-            $data['events'] = AuditEvent::where('store_id', $store)->latest('created_at')->paginate(40);
+            $data['events'] = AuditEvent::where('store_id', $store)->latest('created_at')->orderByDesc('id')->paginate($perPage)->withQueryString();
         }
 
         if (in_array($page, ['sales', 'purchasing'])) {
