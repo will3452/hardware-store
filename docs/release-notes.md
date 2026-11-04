@@ -136,6 +136,6 @@ The large 12-month performance target, independent off-site disaster recovery, p
 
 See [the user guide](user-guide.md) for same-day setup and [Hostinger deployment](hostinger-deployment.md) for release, backup, and rollback commands.
 
-## Scanner and receipt printing — selective release prepared November 4, 2026
+## Scanner and receipt printing — deployed November 4, 2026
 
-Queued exact scans, manual-entry fallback, 58/80 mm and Document/A4 receipt previews, test printing and COPY reprints are ready on `codex/scanner-receipts-release`. Offline POS is excluded. Local checks passed: 150 PHP tests / 1,312 assertions, 8 JavaScript tests, Pint, PHPStan and the production build. Deployment status and operator instructions are in [Scanner and receipt printing](scanner-receipts.md).
+Queued exact scans, manual-entry fallback, 58/80 mm and Document/A4 receipt previews, test printing and COPY reprints are live in runtime release `e722ae4`. Offline POS is excluded. Local checks passed: 150 PHP tests / 1,312 assertions, 8 JavaScript tests, Pint, PHPStan and the production build. Production checks verified both store catalogs, three receipt layouts, authentication and asset hashes, with protected records unchanged. Deployment evidence and operator instructions are in [Scanner and receipt printing](scanner-receipts.md).

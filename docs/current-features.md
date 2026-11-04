@@ -7,7 +7,7 @@ Pyesio is an online hardware-store management system for independent businesses.
 This inventory describes the implemented production release, including hardware product templates, customer credit, and quotations with partial pickup/delivery. Features still being discussed are listed separately under **Not yet included**.
 
 
-Scanner and receipt enhancements are documented in [Scanner and receipt printing](scanner-receipts.md). Offline POS remains a separate, undeployed experimental branch.
+Deployed scanner and receipt enhancements are documented in [Scanner and receipt printing](scanner-receipts.md). Offline POS remains a separate, undeployed experimental branch.
 
 Live application: [Pyesio](https://wgalas.lzrk.io/login).
 
@@ -244,7 +244,7 @@ For an existing store, change settings through **Admin Portal → Manage → Mod
 
 Customers, Credit, and Orders were initially disabled for existing stores during the compatible upgrade. They were subsequently enabled and verified for both current pilot stores on November 4. Each customer's individual credit approval remains a separate setting.
 
-The recorded release verification includes **144 passing tests / 1,232 assertions**, code checks, browser walkthroughs, and production verification using rolled-back synthetic transactions. Backup restore targets, large-scale performance, and off-site recovery are separate operational follow-ups.
+The recorded release verification includes **150 passing PHP tests / 1,312 assertions**, **8 JavaScript tests**, code checks, and the production verification described in [Scanner and receipt printing](scanner-receipts.md). Earlier releases used rolled-back synthetic transactions; the scanner/printing deployment used read-only checks and existing records. Backup restore targets, large-scale performance, and off-site recovery are separate operational follow-ups.
 
 ## 13. Not yet included
 

@@ -1,6 +1,6 @@
 # Scanner and receipt printing release
 
-Prepared November 4, 2026 (Asia/Manila). Selective release from `add5fbc`, on `codex/scanner-receipts-release`. Deployment verification is recorded below when complete.
+Deployed November 4, 2026 (Asia/Manila). Runtime release `e722ae4`, selectively based on `add5fbc`.
 
 ## Included
 
@@ -41,4 +41,12 @@ For rollback, restore the prior source commit and its public manifest/.htaccess 
 
 ## Production status
 
-Pending deployment: the SSH password in the existing Desktop access file was rejected during preflight. No production changes were made by these failed logins. The release is built and tested; no further feature approval is needed, only working SSH access.
+Deployed to [Pyesio](https://wgalas.lzrk.io) on November 4, 2026 after a brief maintenance window. Runtime commit: `e722ae4b4d99c82516127885638d9363390b7e0e`. The initial SSH login issue was resolved by removing curly-quote delimiters from the supplied credential when reading it.
+
+- Private recovery snapshot `20261104-151705-245499` was created and verified before release. Archive/checksum verification is not a full restore rehearsal.
+- Read-only database transactions verified exact catalog lookup for both WGALAS and LAPITO, plus all three sample print layouts for each store. LAPITO's existing sales record also rendered all three layouts, COPY mode and administrator read-only navigation. WGALAS had no existing sale/return available for that historic-record check; no test sale was inserted.
+- Protected table fingerprints matched before/after the release. Production `.env`, public `index.php`, and server-only `bun.lock` hashes remained unchanged. No migrations or seeders ran.
+- HTTPS health/login, receipt CSS and released JavaScript return 200. Served CSS/JavaScript SHA-256 hashes match the built artifacts. Both store test-print routes require sign-in; a browser check confirmed the login redirect. Private environment/source URLs return 403.
+- Runtime inspection confirmed no offline routes. Old hashed assets remain available. Physical scanner/printer output still requires the store's actual hardware.
+
+Private deployment evidence is retained outside the web root in `.scanner-receipts-20261104` on the host. The runtime uses `app-Cs4PLLpc.js` and the unchanged `app-BDDSCe1L.css`.
