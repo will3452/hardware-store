@@ -13,7 +13,7 @@ DirectoryIndex index.php
     RewriteRule ^(app|bootstrap|config|database|deployment|docs|node_modules|public|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
-    RewriteCond %{REQUEST_URI} !^/($|index\.php$|build/|favicon\.(ico|svg)$|apple-touch-icon\.png$|robots\.txt$|\.well-known/acme-challenge/)
+    RewriteCond %{REQUEST_URI} !^/($|index\.php$|build/|receipt\.css$|favicon\.(ico|svg)$|apple-touch-icon\.png$|robots\.txt$|\.well-known/acme-challenge/)
     RewriteRule ^ - [F,L]
 
     # Handle Authorization Header

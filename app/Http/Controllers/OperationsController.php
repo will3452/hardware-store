@@ -195,7 +195,14 @@ class OperationsController extends Controller
         $this->access->module('catalog');
         $request->validate(['q' => ['nullable', 'string', 'max:100']]);
         $q = $request->string('q')->toString();
-        $products = Product::when(! $request->boolean('include_archived'), fn ($q) => $q->where('active', true))->where(fn ($builder) => $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q))->orderBy('name')->limit(30)->get();
+        $products = Product::when(! $request->boolean('include_archived') || $request->boolean('exact'), fn ($builder) => $builder->where('active', true))
+            ->where(function ($builder) use ($request, $q): void {
+                if ($request->boolean('exact')) {
+                    $builder->whereRaw('BINARY barcode = ?', [$q])->orWhereRaw('LOWER(sku) = ?', [mb_strtolower($q)]);
+                } else {
+                    $builder->where('name', 'like', '%'.$q.'%')->orWhere('sku', 'like', '%'.$q.'%')->orWhere('barcode', $q);
+                }
+            })->orderBy('name')->limit(30)->get();
         $units = ProductUnit::whereIn('product_id', $products->pluck('id'))->get()->groupBy('product_id');
 
         return response()->json($products->map(fn ($product) => ['id' => $product->id, 'active' => $product->active, 'name' => $product->name, 'sku' => $product->sku, 'barcode' => $product->barcode, 'base_unit' => $product->base_unit, 'fractional' => $product->fractional, 'quantity_micro' => $product->quantity_micro, 'price_minor' => $product->price_minor, 'units' => $units->get($product->id, collect())->values()])->values());

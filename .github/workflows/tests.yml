@@ -70,4 +70,6 @@ jobs:
           npm run build
 
       - name: Run CI Checks
-        run: composer ci:check
+        run: |
+          composer ci:check
+          npm test

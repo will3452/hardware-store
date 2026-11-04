@@ -8,6 +8,7 @@ use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\SalesOrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-order');
             Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customer');
             Route::get('documents/{document}', [OperationsController::class, 'document'])->name('document');
+            Route::get('documents/{document}/print', [ReceiptController::class, 'show'])->name('receipt');
             Route::get('purchases/{order}', [OperationsController::class, 'order'])->name('order');
             Route::get('cash-sessions/{cashSession}', [CashReportController::class, 'show'])->name('cash.show');
             Route::get('attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
@@ -48,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('store/{store}')->middleware('store.context')->name('store.')->group(function () {
         Route::get('/', [OperationsController::class, 'page'])->name('dashboard');
         Route::get('workspace/{page}', [OperationsController::class, 'page'])->name('page');
+        Route::get('print-test', [ReceiptController::class, 'show'])->name('print-test');
         Route::get('catalog', [OperationsController::class, 'catalog'])->name('catalog');
         Route::get('customers/search', [CustomerController::class, 'search'])->name('customers.search');
         Route::post('order-actions/{action}/{salesOrder?}', [SalesOrderController::class, 'action'])->name('order.action');
@@ -60,6 +63,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('documents/{document}/attachments', [AttachmentController::class, 'upload'])->name('attachments.upload');
         Route::get('attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::get('documents/{document}', [OperationsController::class, 'document'])->name('document');
+        Route::get('documents/{document}/print', [ReceiptController::class, 'show'])->name('receipt');
         Route::post('cash/{action}', [OperationsController::class, 'cash'])->name('cash');
         Route::get('cash-sessions/{cashSession}', [CashReportController::class, 'show'])->name('cash.show');
         Route::post('suppliers', [OperationsController::class, 'supplier'])->name('suppliers.save');

@@ -1,4 +1,5 @@
 <x-store-screen :store="$store" :page="$page" :modules="$modules">
+@if(!$readOnly)<p class="no-print"><a class="underline" href="{{ route('store.print-test', $store->id) }}">Printer setup & test print</a></p>@endif
 <nav class="hms-section-links no-print" aria-label="On this page"><span>Jump to</span><a href="#transaction-history">Sales history</a></nav>
 @if(!$readOnly && ($modules['sales'] ?? null) === 'enabled')
 @if(!$session)<div class="hms-notice">Open your cash drawer before recording sales. <a class="underline" href="{{ \App\Support\StoreWorkspace::route('store.page', [$store->id, 'cash']) }}">Open cash session →</a></div>@endif
@@ -26,7 +27,7 @@
 <div class="hms-grid three hms-payment-totals" aria-live="polite"><div><small>Total · {{ $store->currency }}</small><strong class="hms-stat" x-text="money(total)"></strong></div><div><small x-text="settlement === 'credit' ? 'Charge to customer' : 'Still to collect'">Still to collect</small><strong class="hms-stat" x-text="money(due)"></strong></div><div><small>Cash change</small><strong class="hms-stat" x-text="money(change)"></strong></div></div>
 <p class="hms-error" x-show="noncashExcess > 0" x-cloak>Noncash payments exceed the sale total. Correct the entered amounts; only cash can produce change.</p>
 <details @if(old('customer') || old('notes')) open @endif><summary>Customer reference & notes (optional)</summary><div class="hms-grid mt-3"><x-field name="customer" label="Customer / reference" maxlength="255"/><x-field name="notes" label="Sale notes" maxlength="2000"/></div></details>
-<button class="hms-primary" :disabled="busy || lines.length === 0 || (settlement !== 'credit' && due > 0) || noncashExcess > 0 || total <= 0 || @js(!$session)"><span x-text="busy ? 'Posting… wait for confirmation' : (settlement === 'credit' ? 'Post sale & customer balance' : 'Post paid sale')">Post paid sale</span></button>
+<button class="hms-primary" :disabled="busy || scanning || lines.length === 0 || (settlement !== 'credit' && due > 0) || noncashExcess > 0 || total <= 0 || @js(!$session)"><span x-text="busy ? 'Posting… wait for confirmation' : (settlement === 'credit' ? 'Post sale & customer balance' : 'Post paid sale')">Post paid sale</span></button>
 <p class="hms-help">Only the posted record confirms the sale. Payment methods can be changed in Store profile.</p>
 </div></form>@endif
 <h2 id="transaction-history">Sales & returns</h2>@include('operations.history')

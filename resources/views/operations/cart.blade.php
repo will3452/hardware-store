@@ -1,7 +1,9 @@
 <div class="hms-card space-y-4">
 <h2>{{ $cartTitle ?? ($cartMode === 'sale' ? 'New paid sale' : 'New purchase order') }}</h2>
 @if($cartMode === 'sale' && !($quoteMode ?? false))<p class="hms-help">Internal sales record · tax calculation is not configured. Review the payment arrangement before posting.</p>@endif
-<label class="hms-field"><span>Find a product or scan a barcode</span><input type="search" x-model="query" @input.debounce.250ms="search()" @keydown.enter.prevent="scan()" placeholder="Product name, SKU, or barcode" autocomplete="off"></label>
+<label class="hms-field"><span>Find a product or scan a barcode</span><input type="search" x-ref="productSearch" x-model="query" @input.debounce.250ms="search()" @keydown.enter.prevent="if (!$event.isComposing) scan()" placeholder="Product name, SKU, or barcode" autocomplete="off"></label>
+<div class="flex flex-wrap gap-2 items-center"><button type="button" class="hms-secondary" @click="$refs.productSearch.focus()">Ready to scan / type</button><span class="hms-help">Optional keyboard scanner: send Enter after each code. One scan adds one base unit.</span></div>
+<div aria-live="polite"><p x-show="scanning" x-cloak>Adding scanned items…</p><p x-show="scanMessage" x-text="scanMessage" x-cloak></p><div x-show="scanError" x-cloak class="hms-error"><span x-text="scanError"></span> <button type="button" class="underline" @click="scanError = ''">Dismiss</button></div></div>
 <p x-show="searching" x-cloak>Searching…</p><p x-show="searchError" x-text="searchError" class="hms-error" x-cloak></p>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-auto">
 <template x-for="product in results" :key="product.id"><button type="button" class="hms-secondary text-left justify-between" @click="add(product)"><span><span x-text="product.name"></span><small x-text="product.sku + ' · ' + Number(product.quantity_micro) / 1000000 + ' ' + product.base_unit + ' on hand'"></small></span><span aria-hidden="true">＋</span></button></template>

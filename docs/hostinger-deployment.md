@@ -246,3 +246,7 @@ Before applying this release, take and verify an on-server recovery snapshot, re
 For a code rollback, restore the prior code and asset manifest while retaining the additive schema. Keep old hashed assets available. Do **not** roll back these migrations or delete new operational tables on production: customers, collections, or orders may already have been entered after enablement. Preserve the existing server-only `bun.lock`.
 
 When publishing assets from a private staging directory or a shell with `umask 077`, explicitly normalize **only public compiled assets** to directories 755 and files 644 before switching the manifest. Verify exact asset checksums through HTTPS. Preserve the host's existing dependency installation mode when rebuilding the autoloader; stale generated `bootstrap/cache/packages.php` / `services.php` manifests may require regeneration before package discovery. Confirm that the rollback path can bring the previous application up even if autoload discovery fails.
+
+## Scanner and receipt-only release
+
+The approved selective release is documented in [Scanner and receipt printing](scanner-receipts.md). It needs no migration or offline configuration. Copy its exact compiled `public/build` artifact, `public/receipt.css`, and updated public `.htaccess`. This does not deploy the separate offline pilot. Preserve the production environment, public entry point and existing merchant data.

@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef2f7; color: #111; font: 14px/1.4 Arial, sans-serif; }
+.print-controls { max-width: 900px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 12px; }
+.print-controls h1 { font-size: 20px; }
+.print-controls form { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 16px; }
+.print-controls button, .print-controls select { font: inherit; padding: 10px; }
+.print-controls p { color: #4a5568; }
+.receipt { width: min(190mm, 100%); margin: 24px auto; padding: 8mm; background: white; overflow-wrap: anywhere; }
+.receipt h2 { font-size: 1.3em; margin: 0; }
+.receipt p { margin: 10px 0; }
+.receipt small { display: block; font-size: .88em; }
+.receipt-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0; }
+.receipt-row > :last-child { flex-shrink: 0; }
+.receipt-item { border-top: 1px dashed #555; padding: 8px 0; break-inside: avoid; }
+.total { border-top: 2px solid; padding-top: 8px; font-size: 1.15em; }
+.receipt footer { margin-top: 16px; border-top: 1px dashed; padding-top: 8px; font-size: .85em; text-align: center; }
+.stamp { font-weight: bold; text-align: center; border: 2px solid; padding: 5px; }
+.notes { white-space: pre-wrap; }
+.paper-58 .receipt { width: 58mm; padding: 3mm; font-size: 11px; }
+.paper-80 .receipt { width: 80mm; padding: 3mm; font-size: 12px; }
+@page { margin: 8mm; }
+@media print {
+    .no-print { display: none !important; }
+    html, body { margin: 0; padding: 0; background: white; color: black; }
+    .receipt { margin: 0 auto; padding: 0; width: 100%; }
+    .paper-58 .receipt { width: 52mm; padding: 0; }
+    .paper-80 .receipt { width: 74mm; padding: 0; }
+    body.paper-58, body.paper-80 { page: receipt-roll; }
+    @page receipt-roll { size: auto; margin: 2mm; }
+}

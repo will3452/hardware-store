@@ -10,6 +10,8 @@ Status: online operational pilot, version 0.3. Updated on November 4, 2026, usin
 
 | Document | Purpose |
 | --- | --- |
+| [Current features](docs/current-features.md) | Production capability inventory and limits |
+| [Scanner and receipt printing](docs/scanner-receipts.md) | Scanner behavior, paper formats, verification and deployment |
 | [User guide](docs/user-guide.md) | Same-day store setup, checkout, receiving, returns, cash closing, and recovery |
 | [Release notes](docs/release-notes.md) | Implemented features, verification, and remaining operational boundaries |
 | [Product requirements](docs/PRD.md) | Product scope, requirements, acceptance criteria, and release boundaries |
@@ -76,6 +78,7 @@ Use `npm run dev` alongside `php artisan serve` when working on assets. To stop 
 
 ```sh
 composer ci:check
+npm test
 npm run build
 ```
 

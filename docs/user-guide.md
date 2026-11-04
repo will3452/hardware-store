@@ -5,7 +5,7 @@ This release supports online daily operations for independent stores. Open [the 
 ## Start as the Platform Admin
 
 1. Sign in. Complete **Settings → Security → Two-factor authentication** if prompted. Keep your recovery codes privately.
-2. Open **Admin Portal → Register a store**. Enter the store's name, unique code, physical address, and owner's login email. Leave all seven modules enabled for a normal hardware store.
+2. Open **Admin Portal → Register a store**. Enter the store's name, unique code, physical address, and owner's login email. Select the required modules and their dependencies from the ten available modules. These selections apply to the new store only; use **Manage → Module access → Save module access** to change an existing store.
 3. Copy the activation link shown after registration and share it privately with the owner. It expires after 72 hours. The admin never sets or sees the owner's password.
 4. The owner opens the link, chooses a password, then signs in. An existing account must sign in as that identity before accepting. If you open an owner's link while signed in as admin, sign out first.
 5. Return to **Admin Portal** for each store's recorded sales and profit estimates. Filters and CSV use Asia/Manila time. Suspended and archived history remains included and each currency has separate totals.
@@ -80,7 +80,7 @@ Platform administrators with store-management access can open **System status** 
 
 Store owners can ask the Platform Admin for a new activation link or a 60-minute owner recovery link after identity verification. Existing account passwords remain unchanged during store invitations. Password recovery invalidates database sessions. Platform administrator recovery is intentionally not exposed through merchant recovery controls; retain TOTP recovery codes and use configured email or the operator's verified administrative procedure.
 
-The platform administrator can view merchant reports. Additional staff roles, customer credit, offline selling, quotations, deliveries, multi-location businesses, provider payment integrations, and statutory accounting are outside this release.
+The platform administrator can view merchant reports and inspect store workspaces read-only. Customer credit, quotations, and basic pickup/delivery are available when the relevant modules are enabled; see the hardware workflows below. Additional staff roles, offline selling, multi-location businesses, provider payment integrations, and statutory accounting remain outside this release. The [current feature inventory](current-features.md) lists shipped capabilities and limitations.
 
 
 ## Email delivery
@@ -119,7 +119,7 @@ Optional **Pack conversion** records actual contents, for example 1 roll = 100 m
 
 ### Customers and credit
 
-Create a customer under **Customers**. Leave credit off for paid-only buyers. To allow debt, explicitly set a positive credit limit and default term. A credit limit cannot be lowered below the outstanding balance while credit stays enabled. Archiving a customer prevents new credit/orders but retains collection and history.
+Create a customer under **Customers**. Leave credit off for paid-only buyers. To allow debt, set **Allow new credit → Yes**, a positive credit limit, and a default term, then save the customer. Enabling the store's Credit module or entering a positive limit does not automatically approve that customer for credit. A credit limit cannot be lowered below the outstanding balance while credit stays enabled. Archiving a customer prevents new credit/orders but retains collection and history.
 
 At **Point of sale**, choose the customer and **Charge balance to customer**. Review the due date (selecting a customer applies their default term), amount received, and remaining amount. Enter zero received for a wholly unpaid sale. The current open cash session is required at checkout. Credit limits are checked again when posting; overdue accounts show a warning and do not incur automatic fees.
 
@@ -141,3 +141,9 @@ Statement filters apply to account entries; the current-balance cards remain cur
 6. Cancel only the unfulfilled remainder with a reason. To change agreed remaining items/prices, **Create revised quotation** closes the old remainder and creates a linked replacement draft. Review, issue, and obtain acceptance again. Existing releases retain their original record and prices.
 
 Stock reservations, pre-release deposits/prepayment, delivery fees, driver accounts, automatic customer messages, and public tracking are not supported in this increment. Do not use manual cash-in or a fabricated sale to simulate a customer deposit. These remain internal management records with no configured fiscal invoice/tax processing.
+
+## Scanner and receipt printing
+
+Use **Ready to scan / type**, then scan an exact registered barcode/SKU followed by Enter. Repeated scans add one base unit each; measured quantities and pack lines need review. Manual product search remains available.
+
+Use **Printer setup & test print** from POS to check a sample without creating a sale. Posted sales and returns offer Document/A4, 58 mm, 80 mm previews and **Reprint a COPY**. See [setup and verification](scanner-receipts.md).

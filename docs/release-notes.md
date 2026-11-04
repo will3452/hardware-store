@@ -135,3 +135,7 @@ Local fixture records are only development data and are never seeded into produc
 The large 12-month performance target, independent off-site disaster recovery, per-store recovery rehearsal, legal retention policy, automated notification outbox, and fiscal certification have not been established by the integration suite. They remain deployment/operational follow-ups rather than implied guarantees. Backups on the same Hostinger account do not protect against loss of the entire account. The operator must monitor backup success and disk usage and maintain an independent protected copy.
 
 See [the user guide](user-guide.md) for same-day setup and [Hostinger deployment](hostinger-deployment.md) for release, backup, and rollback commands.
+
+## Scanner and receipt printing — selective release prepared November 4, 2026
+
+Queued exact scans, manual-entry fallback, 58/80 mm and Document/A4 receipt previews, test printing and COPY reprints are ready on `codex/scanner-receipts-release`. Offline POS is excluded. Local checks passed: 150 PHP tests / 1,312 assertions, 8 JavaScript tests, Pint, PHPStan and the production build. Deployment status and operator instructions are in [Scanner and receipt printing](scanner-receipts.md).
